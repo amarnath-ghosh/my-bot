@@ -430,13 +430,9 @@ export default function MeetingBotApp() {
             timestamp: entryTimestamp,
             confidence: segment.confidence,
           };
-          setFullTranscript(prev => {
-            const next = [...prev, newEntry];
-            try {
-              fullTranscriptRef.current = next;
-            } catch (e) {}
-            return next;
-          });
+          try {
+            fullTranscriptRef.current = [...fullTranscriptRef.current, newEntry];
+          } catch (e) {}
         } catch (err) {
           console.warn('Failed to append to fullTranscript:', err);
         }
@@ -805,4 +801,4 @@ export default function MeetingBotApp() {
       </div>
     </div>
   );
-}+
+}
