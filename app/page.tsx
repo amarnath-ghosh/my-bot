@@ -61,6 +61,20 @@ export default function MeetingBotApp() {
 
   // --- 5. EFFECTS ---
 
+  // Improved Sync Function to fetch latest state from Main Process
+  const syncStatus = useCallback(async () => {
+    if (window.electronAPI?.getActiveBots) {
+      try {
+        const bots = await window.electronAPI.getActiveBots();
+        console.log('[UI] Syncing active bots:', bots);
+        setActiveBots(bots);
+        setLastSync(new Date().toLocaleTimeString());
+      } catch (error) {
+        console.error('[UI] Failed to sync bots:', error);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // FIX: Set initial time only on the client side
     setLastSync(new Date().toLocaleTimeString());
@@ -68,30 +82,19 @@ export default function MeetingBotApp() {
     if (!window.electronAPI) return;
 
     // 1. Initial Sync: Ask backend "Are any bots running?"
-    if (window.electronAPI.getActiveBots) {
-      window.electronAPI.getActiveBots().then((bots) => {
-        console.log('[UI] Initial sync:', bots);
-        setActiveBots(bots);
-      });
-    }
+    syncStatus();
 
     // 2. Listen for New Joins
     window.electronAPI.onBotJoined((data: BotStatus) => {
       console.log('[UI] 🚨 New meeting joined:', data);
-      setActiveBots(prev => {
-        if (prev.find(b => b.id === data.id)) return prev;
-        return [...prev, data];
-      });
-      // Flash the status
+      syncStatus(); // Force a full sync to ensure list is accurate
       setAppState(prev => ({ ...prev, status: `🚀 Auto-joined: ${data.id}` }));
-      setLastSync(new Date().toLocaleTimeString());
     });
 
     // 3. Listen for Leavings
     window.electronAPI.onBotLeft((meetingId: string) => {
       console.log('[UI] Bot left:', meetingId);
-      setActiveBots(prev => prev.filter(b => b.id !== meetingId));
-      setLastSync(new Date().toLocaleTimeString());
+      syncStatus(); // Force a full sync
     });
 
     // Initialize Services
@@ -106,7 +109,7 @@ export default function MeetingBotApp() {
     initializeServices();
 
     return () => cleanup();
-  }, []);
+  }, [syncStatus]);
 
   const cleanup = useCallback((): void => {
     if (transcriptionServiceRef.current) transcriptionServiceRef.current.disconnect();
@@ -117,12 +120,43 @@ export default function MeetingBotApp() {
   }, []);
 
   // --- 6. HANDLERS ---
-  const syncStatus = async () => {
-    if (window.electronAPI?.getActiveBots) {
-        const bots = await window.electronAPI.getActiveBots();
-        setActiveBots(bots);
-        setLastSync(new Date().toLocaleTimeString());
+
+  // NEW: Handle attaching to an existing background bot
+  const handleMonitorBot = async (bot: BotStatus) => {
+    console.log(`[UI] Attaching to bot: ${bot.id}`);
+
+    // 1. Stop any existing local analysis first
+    if (appState.isRecording) {
+        handleStopAnalysis();
     }
+
+    // 2. Update UI State to reflect we are "in" this meeting
+    setAppState(prev => ({
+        ...prev,
+        meetingUrl: bot.url,
+        isInMeeting: true, // The bot is physically there, so we are logically there
+        status: `Attached to Bot (${bot.id}). Requesting audio...`,
+        error: null,
+        // Mock session object to make UI indicators light up
+        currentSession: { 
+            id: bot.id, 
+            url: bot.url, 
+            startTime: Date.now(), 
+            endTime: null, 
+            participants: [], 
+            totalTranscript: [] 
+        } 
+    }));
+
+    // 3. Initialize Analytics for this specific session
+    if (analyticsServiceRef.current) {
+        analyticsServiceRef.current.startSession(bot.id, bot.url);
+    }
+
+    // 4. Start Transcription/AI immediately
+    // Note: This will trigger the screen share prompt. 
+    // User must select "System Audio" to hear the hidden window.
+    await handleStartAnalysis();
   };
 
   const handleJoinMeeting = async (): Promise<void> => {
@@ -278,6 +312,30 @@ export default function MeetingBotApp() {
         }
         transcriptionAudioStream = new MediaStream(displayStream.getAudioTracks());
       }
+
+      // --- 🚨 CRITICAL FIX: CHECK FOR AUDIO TRACKS ---
+      const audioTracks = transcriptionAudioStream.getAudioTracks();
+      if (audioTracks.length === 0) {
+        alert("CRITICAL ERROR: No audio track detected.\n\nWhen the screen share popup appears, you MUST check the box 'Share System Audio' (bottom left).");
+        throw new Error("No audio track in stream. User likely did not share system audio.");
+      }
+
+      // Debug: Monitor audio levels
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(transcriptionAudioStream);
+      const analyzer = audioContext.createAnalyser();
+      source.connect(analyzer);
+      const dataArray = new Uint8Array(analyzer.frequencyBinCount);
+      
+      // Simple loop to log if we are actually "hearing" anything
+      const checkAudioInterval = setInterval(() => {
+        analyzer.getByteFrequencyData(dataArray);
+        const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        if (volume > 0) {
+            console.log(`[AudioMonitor] 🔊 Hearing Audio (Vol: ${volume.toFixed(1)})`);
+            clearInterval(checkAudioInterval); // Stop checking once we confirm audio
+        }
+      }, 1000);
       
       audioStreamRef.current = transcriptionAudioStream;
       console.log('✓ Audio stream obtained for transcription.');
@@ -688,18 +746,23 @@ export default function MeetingBotApp() {
                         </div>
                     ) : (
                         activeBots.map((bot) => (
-                            <div key={bot.id} className="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-100 rounded-lg group hover:border-indigo-300 transition-colors">
+                            <div key={bot.id} className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${appState.meetingUrl === bot.url ? 'bg-green-50 border-green-300' : 'bg-indigo-50 border-indigo-100'}`}>
                                 <div className="flex items-center gap-3">
-                                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                    <div className={`h-2 w-2 rounded-full ${appState.meetingUrl === bot.url ? 'bg-green-600 animate-pulse' : 'bg-green-500'}`}></div>
                                     <div>
                                         <p className="font-bold text-indigo-900 text-sm">{bot.id}</p>
                                         <p className="text-xs text-indigo-600 font-mono truncate w-48">{bot.url}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs text-indigo-400 bg-white px-2 py-1 rounded">
-                                        Auto-Joined
-                                    </span>
+                                    <button 
+                                        onClick={() => handleMonitorBot(bot)}
+                                        disabled={appState.isRecording && appState.meetingUrl === bot.url}
+                                        className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700 disabled:bg-gray-300 transition-all shadow-sm"
+                                    >
+                                        {appState.isRecording && appState.meetingUrl === bot.url ? 'MONITORING' : 'MONITOR / CONTROL'}
+                                    </button>
+                                    
                                     <button 
                                         onClick={() => handleLeaveMeeting(bot.id)}
                                         className="px-3 py-1.5 bg-white text-red-500 text-xs font-bold rounded border border-red-200 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
