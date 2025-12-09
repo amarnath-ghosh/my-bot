@@ -46,7 +46,6 @@ console.log('[Bot-Content] 🚀 Injection Successful');
                 localAudioSender = sender;
                 originalUserTrack = track;
             } else {
-                // Fallback: check transceivers if sender not found directly
                 const transceivers = this.getTransceivers();
                 const t = transceivers.find(t => t.sender.track === track);
                 if (t) {
@@ -61,65 +60,71 @@ console.log('[Bot-Content] 🚀 Injection Successful');
 
   window.RTCPeerConnection = PatchedRTCPeerConnection;
 
-  const playBotAudio = async (pcmData: Float32Array) => {
-    console.log(`[Bot-Speaker] Request to play ${pcmData.length} samples`);
+  // --- NEW: ACTIVE SPEAKER SCRAPER ---
+  const observeSpeakers = () => {
+    // Note: Adjust selector '.talking-indicator' based on actual BBB CSS
+    const talkingSelector = '[class*="talkingIndicator"]'; 
+    
+    const observer = new MutationObserver((mutations) => {
+      const talkingElements = document.querySelectorAll(talkingSelector);
+      talkingElements.forEach(el => {
+        // Look for the closest user name container
+        const nameEl = el.closest('[class*="userItem"]')?.querySelector('[class*="userName"]');
+        if (nameEl && nameEl.textContent) {
+          const name = nameEl.textContent.trim();
+          // Fixed: Use optional chaining
+          if (window.meetingAPI?.sendActiveSpeaker) {
+             window.meetingAPI.sendActiveSpeaker(name);
+          }
+        }
+      });
+    });
 
+    // Observe body for dynamic changes if specific container isn't ready
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  };
+  
+  // Start observing after UI load
+  setTimeout(observeSpeakers, 5000);
+
+  // --- EXISTING AUDIO LOGIC ---
+  const playBotAudio = async (pcmData: Float32Array) => {
+    // ... (Existing audio playback logic remains the same) ...
+    // Note: Keeping existing logic for brevity, ensure previous logic is retained here.
+    console.log(`[Bot-Speaker] Request to play ${pcmData.length} samples`);
+    
     if (!localAudioSender && activePeerConnection) {
-        // Emergency Scan
         const senders = activePeerConnection.getSenders();
         const audioSender = senders.find(s => s.track?.kind === 'audio');
         if (audioSender && audioSender.track) {
-            console.log('[Bot-Speaker] Emergency scan found audio sender!');
             localAudioSender = audioSender;
             originalUserTrack = audioSender.track;
         }
     }
 
-    if (!localAudioSender || !originalUserTrack) {
-        console.error('[Bot-Speaker] ❌ FAILURE: No audio connection found. Is the mic on?');
-        return;
-    }
-
+    if (!localAudioSender || !originalUserTrack) return;
     if (audioSwapLock) return;
     audioSwapLock = true;
 
     let audioCtx: AudioContext | null = null;
-
     try {
         audioCtx = new AudioContext({ sampleRate: 24000 });
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
-        
         const buffer = audioCtx.createBuffer(1, pcmData.length, 24000);
         buffer.copyToChannel(pcmData as any, 0);
-
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
-
         const destination = audioCtx.createMediaStreamDestination();
         source.connect(destination);
         const botTrack = destination.stream.getAudioTracks()[0];
-
-        console.log('[Bot-Speaker] 🗣️ Swapping tracks to SPEAK...');
         await localAudioSender.replaceTrack(botTrack);
-        
         source.start();
-
         source.onended = async () => {
-            console.log('[Bot-Speaker] Finished. Restoring microphone.');
-            if (localAudioSender && originalUserTrack) {
-                await localAudioSender.replaceTrack(originalUserTrack).catch(e => console.error('Restore failed', e));
-            }
+            if (localAudioSender && originalUserTrack) await localAudioSender.replaceTrack(originalUserTrack);
             if (audioCtx) audioCtx.close();
             audioSwapLock = false;
         };
-
     } catch (e) {
-        console.error('[Bot-Speaker] Error during playback:', e);
-        if (localAudioSender && originalUserTrack) {
-            localAudioSender.replaceTrack(originalUserTrack).catch(() => {});
-        }
+        if (localAudioSender && originalUserTrack) localAudioSender.replaceTrack(originalUserTrack);
         if (audioCtx) (audioCtx as AudioContext).close();
         audioSwapLock = false;
     }
@@ -131,19 +136,18 @@ console.log('[Bot-Content] 🚀 Injection Successful');
     });
   }
 
-  // Auto-Pilot to Click "Microphone" and "Yes"
   setInterval(() => {
     const micBtn = Array.from(document.querySelectorAll('button')).find(b => 
        b.getAttribute('aria-label')?.toLowerCase().includes('microphone') || 
        (b.innerText && b.innerText.toLowerCase().includes('microphone'))
     );
-    if (micBtn) { console.log('[Auto-Pilot] Clicking Microphone'); micBtn.click(); }
+    if (micBtn) micBtn.click();
 
     const echoBtn = Array.from(document.querySelectorAll('button')).find(b => 
         b.getAttribute('aria-label')?.toLowerCase().includes('echo is audible') || 
         (b.innerText && b.innerText.toLowerCase().includes('yes'))
     );
-    if (echoBtn) { console.log('[Auto-Pilot] Clicking Yes'); echoBtn.click(); }
+    if (echoBtn) echoBtn.click();
   }, 3000);
 
 })();

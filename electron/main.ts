@@ -163,12 +163,26 @@ class ElectronApp {
       return { success: true };
     });
     
+    ipcMain.on('active-speaker', (event, name) => {
+  if (this.windows.mainWindow && !this.windows.mainWindow.isDestroyed()) {
+    this.windows.mainWindow.webContents.send('active-speaker-update', name);
+  }
+});
+    
     ipcMain.handle('get-active-bots', async () => {
       return Array.from(this.activeBotDetails.values());
     });
 
     ipcMain.handle('get-sources', async () => {
         return await desktopCapturer.getSources({ types: ['window', 'screen'] });
+    });
+
+    ipcMain.on('active-speaker', (event, name) => {
+      console.log(`[Main] 🗣️ Active Speaker: ${name}`);
+      // Forward to the main dashboard window
+      if (this.windows.mainWindow && !this.windows.mainWindow.isDestroyed()) {
+        this.windows.mainWindow.webContents.send('active-speaker-update', name);
+      }
     });
 
     ipcMain.on('bot-speak-data', (event, pcmData) => {
