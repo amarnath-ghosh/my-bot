@@ -1,0 +1,390 @@
+{
+  "session": {
+    "id": "session_1765373285369",
+    "url": "https://bbb.employability.life/bigbluebutton/api/join?meetingID=random-4795612&fullName=Meeting+Bot&password=ap&checksum=6f1e02e04baa866c0131c16e7a75900d0d603e1d",
+    "startTime": 1765373285369,
+    "endTime": 1765373317584,
+    "participants": [
+      "Interim",
+      "Final"
+    ]
+  },
+  "transcription": [
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello.",
+      "timestamp": "2025-12-10T13:28:24.523Z",
+      "startTime": 7420,
+      "endTime": 7920,
+      "confidence": 0.8510742,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 7420,
+          "endTime": 7920,
+          "confidence": 0.8510742,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Hello.",
+      "timestamp": "2025-12-10T13:28:25.542Z",
+      "startTime": 7420,
+      "endTime": 7920,
+      "confidence": 0.82836914,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 7420,
+          "endTime": 7920,
+          "confidence": 0.82836914,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello.",
+      "timestamp": "2025-12-10T13:28:28.562Z",
+      "startTime": 12089.999,
+      "endTime": 12440,
+      "confidence": 0.7780762,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 12089.999,
+          "endTime": 12440,
+          "confidence": 0.7780762,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello. Hello. No more",
+      "timestamp": "2025-12-10T13:28:29.530Z",
+      "startTime": 12089.999,
+      "endTime": 13440,
+      "confidence": 0.9338379,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 12089.999,
+          "endTime": 12330,
+          "confidence": 0.9338379,
+          "speaker": 0
+        },
+        {
+          "word": "hello",
+          "startTime": 12330,
+          "endTime": 12809.999,
+          "confidence": 0.7322998,
+          "speaker": 0
+        },
+        {
+          "word": "no",
+          "startTime": 12809.999,
+          "endTime": 13059.999,
+          "confidence": 0.73876953,
+          "speaker": 0
+        },
+        {
+          "word": "more",
+          "startTime": 13059.999,
+          "endTime": 13440,
+          "confidence": 0.9980469,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Hello.",
+      "timestamp": "2025-12-10T13:28:29.800Z",
+      "startTime": 12170,
+      "endTime": 12670,
+      "confidence": 0.82128906,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 12170,
+          "endTime": 12670,
+          "confidence": 0.82128906,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Nice guy.",
+      "timestamp": "2025-12-10T13:28:30.693Z",
+      "startTime": 14019.999500000002,
+      "endTime": 14624,
+      "confidence": 0.96972656,
+      "words": [
+        {
+          "word": "nice",
+          "startTime": 14019.999500000002,
+          "endTime": 14340,
+          "confidence": 0.96972656,
+          "speaker": 0
+        },
+        {
+          "word": "guy",
+          "startTime": 14340,
+          "endTime": 14624,
+          "confidence": 0.93774414,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Nice guy. The beast has been",
+      "timestamp": "2025-12-10T13:28:31.733Z",
+      "startTime": 14180,
+      "endTime": 15624,
+      "confidence": 0.96533203,
+      "words": [
+        {
+          "word": "nice",
+          "startTime": 14180,
+          "endTime": 14420,
+          "confidence": 0.98291016,
+          "speaker": 0
+        },
+        {
+          "word": "guy",
+          "startTime": 14420,
+          "endTime": 14660,
+          "confidence": 0.9794922,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 14660,
+          "endTime": 14900,
+          "confidence": 0.96533203,
+          "speaker": 0
+        },
+        {
+          "word": "beast",
+          "startTime": 14900,
+          "endTime": 15139.999,
+          "confidence": 0.7685547,
+          "speaker": 0
+        },
+        {
+          "word": "has",
+          "startTime": 15139.999,
+          "endTime": 15380,
+          "confidence": 0.66503906,
+          "speaker": 0
+        },
+        {
+          "word": "been",
+          "startTime": 15380,
+          "endTime": 15624,
+          "confidence": 0.8720703,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Nice guy. The beast has Now waste.",
+      "timestamp": "2025-12-10T13:28:33.075Z",
+      "startTime": 14180,
+      "endTime": 16360,
+      "confidence": 0.9291992,
+      "words": [
+        {
+          "word": "nice",
+          "startTime": 14180,
+          "endTime": 14340,
+          "confidence": 0.9863281,
+          "speaker": 0
+        },
+        {
+          "word": "guy",
+          "startTime": 14340,
+          "endTime": 14740,
+          "confidence": 0.9892578,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 14740,
+          "endTime": 14980,
+          "confidence": 0.96435547,
+          "speaker": 0
+        },
+        {
+          "word": "beast",
+          "startTime": 14980,
+          "endTime": 15139.999,
+          "confidence": 0.3544922,
+          "speaker": 0
+        },
+        {
+          "word": "has",
+          "startTime": 15139.999,
+          "endTime": 15460,
+          "confidence": 0.9291992,
+          "speaker": 0
+        },
+        {
+          "word": "now",
+          "startTime": 15540,
+          "endTime": 15860,
+          "confidence": 0.4189453,
+          "speaker": 0
+        },
+        {
+          "word": "waste",
+          "startTime": 15860,
+          "endTime": 16360,
+          "confidence": 0.7208252,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Nice guy. The least has Now waste.",
+      "timestamp": "2025-12-10T13:28:33.698Z",
+      "startTime": 14180,
+      "endTime": 16360,
+      "confidence": 0.8310547,
+      "words": [
+        {
+          "word": "nice",
+          "startTime": 14180,
+          "endTime": 14340,
+          "confidence": 0.98095703,
+          "speaker": 0
+        },
+        {
+          "word": "guy",
+          "startTime": 14340,
+          "endTime": 14740,
+          "confidence": 0.9831543,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 14740,
+          "endTime": 14980,
+          "confidence": 0.92333984,
+          "speaker": 0
+        },
+        {
+          "word": "least",
+          "startTime": 14980,
+          "endTime": 15139.999,
+          "confidence": 0.4428711,
+          "speaker": 0
+        },
+        {
+          "word": "has",
+          "startTime": 15139.999,
+          "endTime": 15460,
+          "confidence": 0.8310547,
+          "speaker": 0
+        },
+        {
+          "word": "now",
+          "startTime": 15540,
+          "endTime": 15860,
+          "confidence": 0.48217773,
+          "speaker": 0
+        },
+        {
+          "word": "waste",
+          "startTime": 15860,
+          "endTime": 16360,
+          "confidence": 0.6972656,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Nice guy. The beast has been now used.",
+      "timestamp": "2025-12-10T13:28:34.760Z",
+      "startTime": 14180,
+      "endTime": 16360,
+      "confidence": 0.9404297,
+      "words": [
+        {
+          "word": "nice",
+          "startTime": 14180,
+          "endTime": 14340,
+          "confidence": 0.98095703,
+          "speaker": 0
+        },
+        {
+          "word": "guy",
+          "startTime": 14340,
+          "endTime": 14740,
+          "confidence": 0.9851074,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 14740,
+          "endTime": 14900,
+          "confidence": 0.9482422,
+          "speaker": 0
+        },
+        {
+          "word": "beast",
+          "startTime": 14900,
+          "endTime": 15139.999,
+          "confidence": 0.35498047,
+          "speaker": 0
+        },
+        {
+          "word": "has",
+          "startTime": 15139.999,
+          "endTime": 15460,
+          "confidence": 0.9404297,
+          "speaker": 0
+        },
+        {
+          "word": "been",
+          "startTime": 15460,
+          "endTime": 15540,
+          "confidence": 0.38134766,
+          "speaker": 0
+        },
+        {
+          "word": "now",
+          "startTime": 15540,
+          "endTime": 15860,
+          "confidence": 0.43164062,
+          "speaker": 0
+        },
+        {
+          "word": "used",
+          "startTime": 15860,
+          "endTime": 16360,
+          "confidence": 0.6727295,
+          "speaker": 0
+        }
+      ]
+    }
+  ]
+}

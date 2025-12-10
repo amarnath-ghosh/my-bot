@@ -1,149 +1,208 @@
 // electron/contentScript.ts
 
-console.log('[Bot-Content] 🚀 Injection Successful');
-
 (function () {
-  let localAudioSender: RTCRtpSender | null = null;
-  let originalUserTrack: MediaStreamTrack | null = null;
-  let activePeerConnection: RTCPeerConnection | null = null;
-  let audioSwapLock = false;
-
-  const NativeRTCPeerConnection = window.RTCPeerConnection;
-
-  class PatchedRTCPeerConnection extends NativeRTCPeerConnection {
-    constructor(config?: RTCConfiguration) {
-      super(config);
-      console.log('[Bot-WebRTC] New PeerConnection created');
-      activePeerConnection = this;
-      
-      this.addEventListener('track', (e) => {
-        console.log('[Bot-WebRTC] Track detected:', e.track.kind);
-      });
+    function debugLog(msg: string) {
+        console.log(msg);
+        const api = (window as any).meetingAPI;
+        if (api && api.log) {
+            api.log(msg);
+        }
     }
 
-    addTrack(track: MediaStreamTrack, ...streams: MediaStream[]) {
-      if (track.kind === 'audio') {
-        console.log('[Bot-WebRTC] 🎤 Audio track added via addTrack');
-        this.updateAudioSender(track);
+    debugLog('[Bot-Content] 🚀 Injection Successful - AUDIO WORKLET + TTS MODE');
+
+    if ((window as any).__BOT_INJECTED) return;
+    (window as any).__BOT_INJECTED = true;
+
+    // Global variables for TTS
+    let localAudioSender: RTCRtpSender | null = null;
+    let originalUserTrack: MediaStreamTrack | null = null;
+    let audioSwapLock = false;
+
+    // 1. Define the Worklet Processor Code
+    // This code runs in a separate thread (Audio Worklet)
+    const workletCode = `
+    class PCMProcessor extends AudioWorkletProcessor {
+      process(inputs, outputs, parameters) {
+        const input = inputs[0];
+        if (input && input.length > 0) {
+          const channelData = input[0];
+          if (channelData) {
+            // Post the Float32Array to the main thread
+            this.port.postMessage(channelData);
+          }
+        }
+        return true; // Keep the processor alive
       }
-      return super.addTrack(track, ...streams);
     }
+    registerProcessor('pcm-processor', PCMProcessor);
+  `;
 
-    addTransceiver(trackOrKind: MediaStreamTrack | string, init?: RTCRtpTransceiverInit) {
-      if (trackOrKind instanceof MediaStreamTrack && trackOrKind.kind === 'audio') {
-        console.log('[Bot-WebRTC] 🎤 Audio track added via addTransceiver');
-        this.updateAudioSender(trackOrKind);
-      }
-      return super.addTransceiver(trackOrKind, init);
-    }
+    async function startAudioPipeline() {
+        try {
+            const audioContext = new AudioContext({ sampleRate: 16000 });
+            debugLog(`[Bot-Audio] AudioContext created. State: ${audioContext.state}`);
 
-    updateAudioSender(track: MediaStreamTrack) {
-        setTimeout(() => {
-            const senders = this.getSenders();
-            const sender = senders.find(s => s.track === track);
-            if (sender) {
-                console.log('[Bot-WebRTC] ✅ Audio Sender SECURED.');
-                localAudioSender = sender;
-                originalUserTrack = track;
-            } else {
-                // Fallback: check transceivers if sender not found directly
-                const transceivers = this.getTransceivers();
-                const t = transceivers.find(t => t.sender.track === track);
-                if (t) {
-                    console.log('[Bot-WebRTC] ✅ Audio Sender SECURED (via Transceiver).');
-                    localAudioSender = t.sender;
-                    originalUserTrack = track;
+            // 2. Load the Worklet
+            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            const workletUrl = URL.createObjectURL(blob);
+
+            await audioContext.audioWorklet.addModule(workletUrl);
+            debugLog('[Bot-Audio] AudioWorklet module loaded.');
+
+            // 3. Create the Node
+            const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+
+            // 4. Handle Audio Data from Worklet (Runs on Main Thread)
+            workletNode.port.onmessage = (event) => {
+                const float32Data = event.data; // Float32Array
+
+                // Calculate RMS for logging (verify signal)
+                let sum = 0;
+                for (let i = 0; i < float32Data.length; i++) {
+                    sum += float32Data[i] * float32Data[i];
+                }
+                const rms = Math.sqrt(sum / float32Data.length);
+
+                if (rms > 0.01 && Math.random() < 0.05) {
+                    debugLog(`[Bot-Audio] ~ RMS: ${rms.toFixed(4)}`);
+                }
+
+                // Convert to Int16 for Deepgram
+                const pcmData = new Int16Array(float32Data.length);
+                for (let i = 0; i < float32Data.length; i++) {
+                    let s = Math.max(-1, Math.min(1, float32Data[i]));
+                    pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+
+                // Send to Main Process
+                const api = (window as any).meetingAPI;
+                if (api && typeof api.sendAudio === 'function') {
+                    api.sendAudio(new Uint8Array(pcmData.buffer));
+                }
+            };
+
+            // Keep node alive by connecting to destination (even if silent)
+            workletNode.connect(audioContext.destination);
+            debugLog('[Bot-Audio] WorkletNode connected to destination.');
+
+            // 5. Connect WebRTC Tracks
+            const NativeRTCPeerConnection = window.RTCPeerConnection;
+            class PatchedRTCPeerConnection extends NativeRTCPeerConnection {
+                constructor(config?: RTCConfiguration) {
+                    super(config);
+                    this.addEventListener('track', async (e) => {
+                        if (e.track.kind === 'audio') {
+                            debugLog('[Bot-WebRTC] 🎤 Remote Audio Track Found!');
+
+                            // Capture Sender for TTS
+                            setTimeout(() => this.findAudioSender(e.track), 1000);
+
+                            try {
+                                const stream = new MediaStream([e.track]);
+                                const source = audioContext.createMediaStreamSource(stream);
+                                source.connect(workletNode);
+                                debugLog('[Bot-Audio] Connected Source -> WorkletNode');
+
+                                if (audioContext.state === 'suspended') {
+                                    await audioContext.resume();
+                                    debugLog('[Bot-Audio] Context Resumed.');
+                                }
+                            } catch (err) {
+                                debugLog(`[Bot-Audio] Error connecting: ${err}`);
+                            }
+                        }
+                    });
+                }
+
+                findAudioSender(track: MediaStreamTrack) {
+                    const senders = this.getSenders();
+                    const sender = senders.find(s => s.track && s.track.kind === 'audio');
+                    if (sender) {
+                        debugLog('[Bot-WebRTC] ✅ Audio Sender Captured for TTS.');
+                        localAudioSender = sender;
+                        originalUserTrack = sender.track;
+                    } else {
+                        debugLog('[Bot-WebRTC] ⚠️ Audio Sender NOT found yet.');
+                    }
                 }
             }
-        }, 500);
-    }
-  }
+            window.RTCPeerConnection = PatchedRTCPeerConnection;
+            debugLog('[Bot-Content] WebRTC Patched. Waiting for meeting...');
 
-  window.RTCPeerConnection = PatchedRTCPeerConnection;
+            // 6. Handle TTS (Play Audio)
+            const api = (window as any).meetingAPI;
+            if (api && typeof api.onBotSpeak === 'function') {
+                api.onBotSpeak(async (pcmData: Float32Array) => {
+                    debugLog(`[Bot-TTS] Received ${pcmData.length} samples to play.`);
 
-  const playBotAudio = async (pcmData: Float32Array) => {
-    console.log(`[Bot-Speaker] Request to play ${pcmData.length} samples`);
+                    if (!localAudioSender) {
+                        debugLog('[Bot-TTS] ❌ Cannot play: No Audio Sender found.');
+                        return;
+                    }
 
-    if (!localAudioSender && activePeerConnection) {
-        // Emergency Scan
-        const senders = activePeerConnection.getSenders();
-        const audioSender = senders.find(s => s.track?.kind === 'audio');
-        if (audioSender && audioSender.track) {
-            console.log('[Bot-Speaker] Emergency scan found audio sender!');
-            localAudioSender = audioSender;
-            originalUserTrack = audioSender.track;
-        }
-    }
+                    if (audioSwapLock) {
+                        debugLog('[Bot-TTS] ⚠️ Already playing, skipping.');
+                        return;
+                    }
+                    audioSwapLock = true;
 
-    if (!localAudioSender || !originalUserTrack) {
-        console.error('[Bot-Speaker] ❌ FAILURE: No audio connection found. Is the mic on?');
-        return;
-    }
+                    try {
+                        // Create a separate context for playback to be safe (or reuse existing if stable)
+                        // Let's reuse audioContext since it's working now, but careful with sample rates.
+                        // Actually, let's create a new one for playback to avoid mixing sample rates logic
+                        const playbackCtx = new AudioContext({ sampleRate: 24000 }); // Typical TTS rate
 
-    if (audioSwapLock) return;
-    audioSwapLock = true;
+                        const buffer = playbackCtx.createBuffer(1, pcmData.length, 24000);
+                        buffer.copyToChannel(pcmData as any, 0);
 
-    let audioCtx: AudioContext | null = null;
+                        const source = playbackCtx.createBufferSource();
+                        source.buffer = buffer;
 
-    try {
-        audioCtx = new AudioContext({ sampleRate: 24000 });
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
-        
-        const buffer = audioCtx.createBuffer(1, pcmData.length, 24000);
-        buffer.copyToChannel(pcmData as any, 0);
+                        const destination = playbackCtx.createMediaStreamDestination();
+                        source.connect(destination);
 
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
+                        const botTrack = destination.stream.getAudioTracks()[0];
+                        debugLog('[Bot-TTS] 🗣️ Swapping track to Bot Voice...');
 
-        const destination = audioCtx.createMediaStreamDestination();
-        source.connect(destination);
-        const botTrack = destination.stream.getAudioTracks()[0];
+                        await localAudioSender.replaceTrack(botTrack);
+                        source.start();
 
-        console.log('[Bot-Speaker] 🗣️ Swapping tracks to SPEAK...');
-        await localAudioSender.replaceTrack(botTrack);
-        
-        source.start();
+                        source.onended = async () => {
+                            debugLog('[Bot-TTS] Finished speaking. Restoring mic.');
+                            if (localAudioSender && originalUserTrack) {
+                                await localAudioSender.replaceTrack(originalUserTrack);
+                            }
+                            playbackCtx.close();
+                            audioSwapLock = false;
+                        };
 
-        source.onended = async () => {
-            console.log('[Bot-Speaker] Finished. Restoring microphone.');
-            if (localAudioSender && originalUserTrack) {
-                await localAudioSender.replaceTrack(originalUserTrack).catch(e => console.error('Restore failed', e));
+                    } catch (e) {
+                        debugLog(`[Bot-TTS] Playback Error: ${e}`);
+                        if (localAudioSender && originalUserTrack) {
+                            localAudioSender.replaceTrack(originalUserTrack).catch(() => { });
+                        }
+                        audioSwapLock = false;
+                    }
+                });
             }
-            if (audioCtx) audioCtx.close();
-            audioSwapLock = false;
-        };
 
-    } catch (e) {
-        console.error('[Bot-Speaker] Error during playback:', e);
-        if (localAudioSender && originalUserTrack) {
-            localAudioSender.replaceTrack(originalUserTrack).catch(() => {});
+        } catch (e) {
+            debugLog(`[Bot-Audio] SETUP ERROR: ${e}`);
         }
-        if (audioCtx) (audioCtx as AudioContext).close();
-        audioSwapLock = false;
     }
-  };
 
-  if (window.meetingAPI && typeof window.meetingAPI.onBotSpeak === 'function') {
-    window.meetingAPI.onBotSpeak((pcmData: Float32Array) => {
-        playBotAudio(pcmData);
-    });
-  }
+    startAudioPipeline();
 
-  // Auto-Pilot to Click "Microphone" and "Yes"
-  setInterval(() => {
-    const micBtn = Array.from(document.querySelectorAll('button')).find(b => 
-       b.getAttribute('aria-label')?.toLowerCase().includes('microphone') || 
-       (b.innerText && b.innerText.toLowerCase().includes('microphone'))
-    );
-    if (micBtn) { console.log('[Auto-Pilot] Clicking Microphone'); micBtn.click(); }
-
-    const echoBtn = Array.from(document.querySelectorAll('button')).find(b => 
-        b.getAttribute('aria-label')?.toLowerCase().includes('echo is audible') || 
-        (b.innerText && b.innerText.toLowerCase().includes('yes'))
-    );
-    if (echoBtn) { console.log('[Auto-Pilot] Clicking Yes'); echoBtn.click(); }
-  }, 3000);
+    // Auto-Pilot
+    setInterval(() => {
+        try {
+            if (document.querySelector('button[aria-label="Microphone"]')) return;
+            const joinAudio = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Microphone'));
+            if (joinAudio) joinAudio.click();
+            const echoYes = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Yes'));
+            if (echoYes) echoYes.click();
+        } catch (e) { }
+    }, 2000);
 
 })();

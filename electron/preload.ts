@@ -1,40 +1,42 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-import { ElectronAPI, BotStatus } from '../lib/types';
+// electron/preload.ts
+import { contextBridge, ipcRenderer } from "electron";
+import type { MeetingStatus } from "../lib/MeetingManager";
 
-// Define the API that will be exposed to the renderer
-const electronAPI: ElectronAPI = {
-  joinMeeting: (url: string) => ipcRenderer.invoke('join-meeting', url),
-  
-  getSources: () => ipcRenderer.invoke('get-sources'),
-  
-  closeMeeting: () => ipcRenderer.invoke('close-meeting'),
-  
-  onTranscriptUpdate: (callback: (data: any) => void) => {
-    const subscription = (event: IpcRendererEvent, data: any) => callback(data);
-    ipcRenderer.on('transcript-update', subscription);
+console.log("[Preload] Script loaded");
+contextBridge.exposeInMainWorld("botApi", {
+  onMeetingsUpdate(callback: (meetings: MeetingStatus[]) => void) {
+    const subscription = (_event: any, meetings: any) => callback(meetings);
+    ipcRenderer.on("meetings:update", subscription);
+    return () => ipcRenderer.removeListener("meetings:update", subscription);
   },
-  
-  removeTranscriptListener: () => {
-    ipcRenderer.removeAllListeners('transcript-update');
+  onTranscript(callback: (data: any) => void) {
+    const subscription = (_event: any, data: any) => callback(data);
+    ipcRenderer.on("bot:transcript", subscription);
+    return () => ipcRenderer.removeListener("bot:transcript", subscription);
   },
+  getSnapshot: () => ipcRenderer.invoke("bot:getSnapshot"),
+  join: (meetingID: string) => ipcRenderer.invoke("bot:join", meetingID),
+  leave: (meetingID: string) => ipcRenderer.invoke("bot:leave", meetingID),
+  restart: (meetingID: string) =>
+    ipcRenderer.invoke("bot:restart", meetingID),
+  setAutoManage: (enabled: boolean) =>
+    ipcRenderer.invoke("bot:setAutoManage", enabled),
+  simulateHello: (id: string) => ipcRenderer.invoke("bot:simulate-hello", id),
+});
 
-  sendBotAudio: (pcmData: Float32Array) => {
-    ipcRenderer.send('bot-speak-data', pcmData);
-  },
-
-  // --- NEW: Bridge the Bot Status Events ---
-  onBotJoined: (callback: (data: BotStatus) => void) => {
-    const subscription = (event: IpcRendererEvent, data: BotStatus) => callback(data);
-    ipcRenderer.on('bot-joined', subscription);
-  },
-
-  onBotLeft: (callback: (meetingId: string) => void) => {
-    const subscription = (event: IpcRendererEvent, id: string) => callback(id);
-    ipcRenderer.on('bot-left', subscription);
-  },
-
-  getActiveBots: () => ipcRenderer.invoke('get-active-bots')
-};
-
-// Expose the API to the renderer process
-contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+declare global {
+  interface Window {
+    botApi: {
+      onMeetingsUpdate(
+        cb: (meetings: MeetingStatus[]) => void
+      ): () => void;
+      onTranscript(cb: (data: any) => void): () => void;
+      getSnapshot(): Promise<MeetingStatus[]>;
+      join(id: string): Promise<void>;
+      leave(id: string): Promise<void>;
+      restart(id: string): Promise<void>;
+      setAutoManage(enabled: boolean): Promise<void>;
+      simulateHello(id: string): Promise<void>;
+    };
+  }
+}

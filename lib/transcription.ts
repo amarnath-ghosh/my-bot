@@ -1,4 +1,5 @@
 import { DeepgramResponse, TranscriptSegment, WordSegment } from './types';
+import WebSocket from 'ws';
 
 export interface TranscriptionConfig {
   apiKey: string;
@@ -40,7 +41,9 @@ export class TranscriptionService {
         profanity_filter: this.config.profanityFilter.toString(),
         interim_results: 'true',
         endpointing: '300',
-        smart_format: 'true', // Added for better formatting
+        smart_format: 'true',
+        encoding: 'linear16',
+        sample_rate: '16000',
       });
 
       const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
@@ -53,9 +56,9 @@ export class TranscriptionService {
         this.reconnectAttempts = 0;
       };
 
-      this.ws.onmessage = (event: MessageEvent) => {
+      this.ws.onmessage = (event: any) => {
         try {
-          const data: DeepgramResponse = JSON.parse(event.data);
+          const data: DeepgramResponse = JSON.parse(event.data as string);
 
           if (data.channel?.alternatives?.[0]?.transcript) {
             const segment = this.processDeepgramResponse(data);
@@ -69,7 +72,7 @@ export class TranscriptionService {
         }
       };
 
-      this.ws.onerror = (event: Event) => {
+      this.ws.onerror = (event: any) => {
         console.error('Deepgram WebSocket error:', onError);
         this.isConnected = false;
         if (onError) {
@@ -77,7 +80,7 @@ export class TranscriptionService {
         }
       };
 
-      this.ws.onclose = (event: CloseEvent) => {
+      this.ws.onclose = (event: any) => {
         console.log('Deepgram WebSocket closed:', event.code, event.reason);
         this.isConnected = false;
 

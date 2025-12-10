@@ -1,185 +1,65 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, session } from 'electron';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as dotenv from 'dotenv';
+import { app, BrowserWindow, ipcMain } from "electron";
+import { MeetingManager } from "../lib/MeetingManager";
+import * as dotenv from "dotenv";
+import * as path from "path";
 
-// --- CRITICAL FIX: Allow Bot to Speak Without User Interaction ---
-app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-app.commandLine.appendSwitch('disable-site-isolation-trials');
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
-// --- ROBUST ENV LOADING ---
-const rootEnvPath = path.join(process.cwd(), '.env');
-const relativeEnvPath = path.join(__dirname, '../../../.env');
-const envPath = fs.existsSync(rootEnvPath) ? rootEnvPath : relativeEnvPath;
-const envResult = dotenv.config({ path: envPath, debug: true });
+let mainWindow: BrowserWindow | null = null;
+const manager = new MeetingManager();
 
-if (envResult.error) {
-  console.error('[Main] ❌ Dotenv Error:', envResult.error);
-} else {
-  console.log(`[Main] ✅ Loaded .env from: ${envPath}`);
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+
+  const appUrl = process.env.APP_URL || "http://localhost:3000";
+  console.log("[Main] Loading URL:", appUrl);
+  console.log("[Main] Preload path:", path.join(__dirname, "preload.js"));
+  mainWindow.loadURL(appUrl);
 }
 
-const MAX_CONCURRENT_MEETINGS = 5; 
+app.whenReady().then(() => {
+  createWindow();
+  manager.start();
 
-interface BotStatus {
-  id: string;
-  url: string;
-  timestamp: number;
-}
+  // Push updates to renderer
+  manager.onUpdate((meetings) => {
+    mainWindow?.webContents.send("meetings:update", meetings);
+  });
 
-interface WindowManager {
-  mainWindow: BrowserWindow | null;
-  meetingWindows: Map<string, BrowserWindow>; 
-}
+  manager.onTranscript((data) => {
+    mainWindow?.webContents.send("bot:transcript", data);
+  });
 
-import { BBBMonitor } from '../lib/bbb-monitor';
+  // Handle manual commands
+  ipcMain.handle("bot:join", (_e, meetingID: string) =>
+    manager.manualJoin(meetingID)
+  );
+  ipcMain.handle("bot:leave", (_e, meetingID: string) =>
+    manager.manualLeave(meetingID)
+  );
+  ipcMain.handle("bot:restart", (_e, meetingID: string) =>
+    manager.manualRestart(meetingID)
+  );
+  ipcMain.handle("bot:getSnapshot", () => manager.getSnapshot());
+  ipcMain.handle("bot:setAutoManage", (_e, enabled: boolean) =>
+    manager.setAutoManage(enabled)
+  );
+  ipcMain.handle("bot:simulate-hello", (_e, id: string) =>
+    manager.simulateHello(id)
+  );
 
-class ElectronApp {
-  private windows: WindowManager = {
-    mainWindow: null,
-    meetingWindows: new Map(), 
-  };
-  private monitor: BBBMonitor | null = null;
-  private activeBotDetails: Map<string, BotStatus> = new Map();
-
-  constructor() {
-    this.initialize();
-  }
-
-  private async initialize() {
-    await app.whenReady();
-    
-    // Grant permissions for audio/video capture
-    session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-      const allowedPermissions = ['media', 'display-capture', 'audioCapture', 'mediaKeySystem'];
-      callback(allowedPermissions.includes(permission));
-    });
-
-    this.createMainWindow();
-    this.setupIpcHandlers();
-    this.startMeetingMonitor(); 
-  }
-
-  private createMainWindow() {
-    this.windows.mainWindow = new BrowserWindow({
-      width: 1400, height: 900,
-      webPreferences: {
-        nodeIntegration: false, contextIsolation: true,
-        preload: path.join(__dirname, 'preload.js'),
-      },
-    });
-
-    const startUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000' 
-      : `file://${path.join(__dirname, '../../../out/index.html')}`;
-      
-    this.windows.mainWindow.loadURL(startUrl);
-  }
-
-  private async createMeetingWindow(meetingUrl: string, meetingId: string): Promise<void> {
-    if (this.windows.meetingWindows.has(meetingId)) return;
-
-    if (this.windows.meetingWindows.size >= MAX_CONCURRENT_MEETINGS) {
-      console.warn(`[Main] Max capacity reached. Ignoring meeting ${meetingId}`);
-      return;
-    }
-
-    console.log(`[Main] 🚀 Joining Meeting: ${meetingId}`);
-
-    const win = new BrowserWindow({
-      width: 1280, height: 800,
-      show: true, // Keep true for debugging
-      title: `Bot: ${meetingId}`,
-      webPreferences: {
-        nodeIntegration: false, 
-        contextIsolation: true,
-        preload: path.join(__dirname, 'meetingPreload.js'),
-        backgroundThrottling: false, 
-      },
-    });
-
-    this.windows.meetingWindows.set(meetingId, win);
-    
-    const botStatus: BotStatus = { id: meetingId, url: meetingUrl, timestamp: Date.now() };
-    this.activeBotDetails.set(meetingId, botStatus);
-    this.windows.mainWindow?.webContents.send('bot-joined', botStatus);
-
-    try {
-      await win.loadURL(meetingUrl);
-
-      win.webContents.on('did-finish-load', () => {
-        const scriptPath = path.join(__dirname, 'contentScript.js');
-        fs.readFile(scriptPath, 'utf-8', (err, script) => {
-          if (!err) {
-            console.log(`[Main] Injecting content script into ${meetingId}`);
-            win.webContents.executeJavaScript(script).catch(e => console.error(e));
-          } else {
-            console.error('[Main] Failed to read contentScript.js', err);
-          }
-        });
-      });
-
-      win.on('closed', () => {
-        console.log(`[Main] Left Meeting: ${meetingId}`);
-        this.windows.meetingWindows.delete(meetingId);
-        this.activeBotDetails.delete(meetingId);
-        if (this.windows.mainWindow && !this.windows.mainWindow.isDestroyed()) {
-            this.windows.mainWindow.webContents.send('bot-left', meetingId);
-        }
-      });
-
-    } catch (error) {
-      console.error(`[Main] Failed to join ${meetingId}:`, error);
-      this.windows.meetingWindows.delete(meetingId);
-      this.activeBotDetails.delete(meetingId);
-      win.close();
-    }
-  }
-
-  private startMeetingMonitor() {
-    this.monitor = new BBBMonitor((joinUrl, meetingId) => {
-      this.createMeetingWindow(joinUrl, meetingId);
-    });
-    this.monitor.start();
-  }
-
-  private setupIpcHandlers() {
-    ipcMain.handle('join-meeting', async (event, url) => {
-      const urlObj = new URL(url);
-      const meetingId = urlObj.searchParams.get('meetingID') || `manual_${Date.now()}`;
-      await this.createMeetingWindow(url, meetingId);
-      return { success: true };
-    });
-
-    ipcMain.handle('close-meeting', async (event, meetingId) => {
-      if (meetingId && this.windows.meetingWindows.has(meetingId)) {
-        const win = this.windows.meetingWindows.get(meetingId);
-        if (win && !win.isDestroyed()) win.close();
-      } else {
-        this.windows.meetingWindows.forEach((win) => {
-            if (!win.isDestroyed()) win.close();
-        });
-      }
-      return { success: true };
-    });
-    
-    ipcMain.handle('get-active-bots', async () => {
-      return Array.from(this.activeBotDetails.values());
-    });
-
-    ipcMain.handle('get-sources', async () => {
-        return await desktopCapturer.getSources({ types: ['window', 'screen'] });
-    });
-
-    ipcMain.on('bot-speak-data', (event, pcmData) => {
-      console.log(`[Main] 🗣️ Received audio (${pcmData.length} samples). Forwarding to meeting windows...`);
-      this.windows.meetingWindows.forEach((win, id) => {
-        if (!win.isDestroyed()) {
-          win.webContents.send('bot-speak', pcmData);
-        }
-      });
-    });
-  }
-}
-
-new ElectronApp();
+  // Handle audio data from content script
+  ipcMain.on("bot:audio", (event, audioData) => {
+    // Forward to manager to route to the correct transcription service
+    manager.processAudioChunk(event.sender.id, audioData);
+  });
+});

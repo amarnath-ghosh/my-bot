@@ -13,14 +13,29 @@ export interface VoiceInfo {
 }
 
 export class SpeechService {
-  private synth: SpeechSynthesis;
+  private synth: SpeechSynthesis | any;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private config: Required<SpeechConfig>;
   private availableVoices: SpeechSynthesisVoice[] = [];
   private deepgramApiKey: string | undefined;
 
   constructor(config: SpeechConfig = {}) {
-    this.synth = window.speechSynthesis;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      this.synth = window.speechSynthesis;
+    } else {
+      // Mock for Node.js
+      this.synth = {
+        getVoices: () => [],
+        cancel: () => { },
+        pause: () => { },
+        resume: () => { },
+        speak: () => { },
+        onvoiceschanged: null,
+        speaking: false,
+        paused: false,
+      };
+    }
+
     this.config = {
       rate: 1.0,
       pitch: 1.0,
@@ -28,13 +43,15 @@ export class SpeechService {
       voice: 'aura-asteria-en', // Default to a Deepgram Aura voice
       ...config,
     };
-    
-    this.deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
+
+    this.deepgramApiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY || process.env.DEEPGRAM_API_KEY;
 
     this.initializeVoices();
   }
 
   private initializeVoices(): void {
+    if (typeof window === 'undefined') return;
+
     // This is for local speech
     const updateVoices = () => {
       this.availableVoices = this.synth.getVoices();
@@ -86,6 +103,12 @@ export class SpeechService {
     onEnd?: () => void,
     onError?: (error: Error) => void
   ): Promise<void> {
+    if (typeof window === 'undefined') {
+      console.warn('Local speech not supported in Node.js environment');
+      if (onEnd) onEnd();
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       // Cancel any ongoing speech
       this.stop();
@@ -112,7 +135,7 @@ export class SpeechService {
         resolve();
       };
 
-      this.currentUtterance.onerror = event => {
+      this.currentUtterance.onerror = (event: any) => {
         const error = new Error(`Speech synthesis error: ${event.error}`);
         if (onError) onError(error);
         reject(error);
@@ -160,18 +183,18 @@ export class SpeechService {
       console.error('Deepgram API key is not set. Cannot generate bot speech.');
       throw new Error('Deepgram API key is not set.');
     }
-    
+
     const model = this.config.voice || 'aura-asteria-en';
-    
+
     const params = new URLSearchParams({
       model: model,
       encoding: 'linear16',    // Request 16-bit linear PCM
       sample_rate: '24000',    // This is the sample rate our content-script context will use
       // --- NO CONTAINER (WAV) ---
     });
-    
+
     const url = `https://api.deepgram.com/v1/speak?${params.toString()}`;
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -186,7 +209,7 @@ export class SpeechService {
         const err = await response.json();
         throw new Error(`Deepgram TTS API error: ${err.reason || response.statusText}`);
       }
-      
+
       // Return the raw audio data as an ArrayBuffer
       return await response.arrayBuffer();
 
