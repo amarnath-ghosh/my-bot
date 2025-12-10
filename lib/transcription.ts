@@ -15,7 +15,6 @@ export class TranscriptionService {
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 3;
-  private keepAliveInterval: NodeJS.Timeout | null = null;
 
   constructor(config: TranscriptionConfig) {
     this.config = {
@@ -52,15 +51,19 @@ export class TranscriptionService {
         console.log('Deepgram WebSocket connection opened');
         this.isConnected = true;
         this.reconnectAttempts = 0;
-        this.startKeepAlive(); // Start heartbeat
       };
 
       this.ws.onmessage = (event: MessageEvent) => {
         try {
           const data: DeepgramResponse = JSON.parse(event.data);
+          // Check if it's a valid transcript response
           if (data.channel?.alternatives?.[0]?.transcript) {
             const segment = this.processDeepgramResponse(data);
             onTranscript(segment, data);
+          } else if (data.is_final) {
+             // Sometimes is_final comes with empty transcript, we still process it
+             const segment = this.processDeepgramResponse(data);
+             onTranscript(segment, data);
           }
         } catch (error) {
           console.error('Error processing Deepgram response:', error);
@@ -68,7 +71,7 @@ export class TranscriptionService {
       };
 
       this.ws.onerror = (event: Event) => {
-        console.error('Deepgram WebSocket error');
+        console.error('Deepgram WebSocket error', event);
         this.isConnected = false;
         if (onError) onError(new Error('WebSocket connection error'));
       };
@@ -76,9 +79,8 @@ export class TranscriptionService {
       this.ws.onclose = (event: CloseEvent) => {
         console.log('Deepgram WebSocket closed:', event.code, event.reason);
         this.isConnected = false;
-        this.stopKeepAlive();
 
-        // 1000 = Normal Closure. Anything else is an error (like 1011).
+        // 1000 = Normal Closure (Intentional). 
         if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
           console.log(`Attempting reconnect ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts}...`);
           setTimeout(() => {
@@ -93,24 +95,6 @@ export class TranscriptionService {
     }
   }
 
-  // --- NEW: KeepAlive Logic ---
-  private startKeepAlive() {
-    this.stopKeepAlive();
-    this.keepAliveInterval = setInterval(() => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        // Send a small JSON object to keep the socket active
-        this.ws.send(JSON.stringify({ type: 'KeepAlive' }));
-      }
-    }, 3000);
-  }
-
-  private stopKeepAlive() {
-    if (this.keepAliveInterval) {
-      clearInterval(this.keepAliveInterval);
-      this.keepAliveInterval = null;
-    }
-  }
-
   sendAudio(audioData: ArrayBuffer): void {
     if (this.ws && this.isConnected && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(audioData);
@@ -118,8 +102,8 @@ export class TranscriptionService {
   }
 
   private processDeepgramResponse(data: DeepgramResponse): TranscriptSegment {
-    const alternative = data.channel.alternatives[0];
-    const words = alternative.words?.map(word => ({
+    const alternative = data.channel?.alternatives?.[0];
+    const words = alternative?.words?.map(word => ({
       word: word.word,
       startTime: word.start * 1000,
       endTime: word.end * 1000,
@@ -132,18 +116,19 @@ export class TranscriptionService {
     return {
       speaker: `Speaker ${speakerIndex}`,
       speakerIndex,
-      text: alternative.transcript,
+      text: alternative?.transcript || "",
       startTime: words.length > 0 ? words[0].startTime : Date.now(),
       endTime: words.length > 0 ? words[words.length - 1].endTime : Date.now(),
-      confidence: alternative.confidence,
+      confidence: alternative?.confidence || 0,
       words,
       isFinal: data.is_final,
     };
   }
 
   disconnect(): void {
-    this.stopKeepAlive();
     if (this.ws) {
+      // Prevents reconnection attempts
+      this.reconnectAttempts = this.maxReconnectAttempts + 1; 
       this.ws.close(1000, 'Intentional disconnect');
       this.ws = null;
       this.isConnected = false;

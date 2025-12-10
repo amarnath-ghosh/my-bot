@@ -39,24 +39,33 @@ export default function MeetingBotApp() {
 
   const [currentVisualSpeaker, setCurrentVisualSpeaker] = useState<string | null>(null);
 
+  // Refs for services
   const fullTranscriptRef = useRef<Array<{
     speaker: string;
     text: string;
     timestamp: string;
     confidence?: number;
   }>>([]);
-  
-  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
-
   const transcriptionServiceRef = useRef<TranscriptionService | null>(null);
   const speechServiceRef = useRef<SpeechService | null>(null);
   const analyticsServiceRef = useRef<AnalyticsService | null>(null);
   const geminiServiceRef = useRef<GeminiService | null>(null);
 
+  // Refs for media
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const desktopStreamRef = useRef<MediaStream | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
+  
+  // Refs for async control
+  const audioMeterRef = useRef<NodeJS.Timeout | null>(null);
+  const captureSessionRef = useRef<number>(0);
+  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
 
+  // --- NEW: Ref to hold the latest transcript handler ---
+  // This ensures the WebSocket always calls the freshest logic
+  const transcriptHandlerRef = useRef<(segment: TranscriptSegment, data: DeepgramResponse) => Promise<void>>();
+
+  // Sync Logic
   const syncStatus = useCallback(async () => {
     if (window.electronAPI?.getActiveBots) {
       try {
@@ -71,19 +80,21 @@ export default function MeetingBotApp() {
 
   useEffect(() => {
     setLastSync(new Date().toLocaleTimeString());
-
     if (!window.electronAPI) return;
 
     syncStatus();
 
-    window.electronAPI.onBotJoined((data: BotStatus) => {
+    const handleBotJoined = (data: BotStatus) => {
       syncStatus();
-      setAppState(prev => ({ ...prev, status: `🚀 Auto-joined: ${data.id}` }));
-    });
+      setAppState(prev => ({ ...prev, status: `🤖 Auto-joined: ${data.id}` }));
+    };
 
-    window.electronAPI.onBotLeft((meetingId: string) => {
+    const handleBotLeft = (meetingId: string) => {
       syncStatus();
-    });
+    };
+
+    window.electronAPI.onBotJoined(handleBotJoined);
+    window.electronAPI.onBotLeft(handleBotLeft);
 
     if (window.electronAPI.onActiveSpeakerChange) {
       window.electronAPI.onActiveSpeakerChange((name: string) => {
@@ -91,26 +102,86 @@ export default function MeetingBotApp() {
       });
     }
 
-    const initializeServices = async () => {
-      try {
-        analyticsServiceRef.current = new AnalyticsService();
-        speechServiceRef.current = new SpeechService({ rate: 1.0, pitch: 1.0, volume: 0.8 });
-      } catch (error) {
-        console.error('Failed to initialize services:', error);
-      }
-    };
-    initializeServices();
+    // Initialize Services
+    analyticsServiceRef.current = new AnalyticsService();
+    speechServiceRef.current = new SpeechService({ rate: 1.0, pitch: 1.0, volume: 0.8 });
 
     return () => cleanup();
   }, [syncStatus]);
 
-  const cleanup = useCallback((): void => {
+  // --- TRANSCRIPT HANDLER ---
+  // We define this separately and keep the Ref updated
+  const handleTranscriptUpdate = async (segment: TranscriptSegment, data: DeepgramResponse) => {
+      // 1. Update Speaker Mapping
+      if (currentVisualSpeaker) {
+          setSpeakerMapping(prev => ({
+              ...prev,
+              [segment.speakerIndex]: currentVisualSpeaker
+          }));
+      }
+
+      const realName = speakerMapping[segment.speakerIndex] || `Speaker ${segment.speakerIndex}`;
+      segment.speaker = realName;
+
+      // 2. Analytics
+      if (analyticsServiceRef.current) {
+        analyticsServiceRef.current.addTranscriptSegment(segment);
+        const sentiment = analyticsServiceRef.current.analyzeSentiment(segment.text);
+        setCurrentSentiment({
+            emotion: sentiment.overall,
+            score: sentiment.score
+        });
+      }
+
+      // 3. Update UI Transcript
+      setTranscript((prev) => {
+        const existingIndex = prev.findIndex(s => s.speakerIndex === segment.speakerIndex && !s.isFinal);
+        if (data.is_final) {
+          segment.isFinal = true;
+          return existingIndex !== -1 ? prev.map((s, i) => i === existingIndex ? segment : s) : [...prev, segment];
+        } else {
+          return existingIndex !== -1 ? prev.map((s, i) => i === existingIndex ? segment : s) : [...prev, segment];
+        }
+      });
+
+      // 4. Handle Finalized Text
+      if (data.is_final && segment.text.trim().length > 0) {
+        const newEntry = {
+          speaker: realName,
+          text: segment.text,
+          timestamp: new Date(Date.now()).toLocaleTimeString(), // Use Date.now() for safety
+          confidence: segment.confidence,
+        };
+        fullTranscriptRef.current = [...fullTranscriptRef.current, newEntry];
+
+        if (isControllerMode) {
+            await evaluateIntervention(segment);
+        } else {
+            checkForBotMention(segment);
+        }
+      }
+  };
+
+  // Keep the ref updated with the latest state-aware function
+  useEffect(() => {
+    transcriptHandlerRef.current = handleTranscriptUpdate;
+  });
+
+  const cleanup = () => {
+    captureSessionRef.current += 1; // Invalidate sessions
+
     if (transcriptionServiceRef.current) transcriptionServiceRef.current.disconnect();
     if (speechServiceRef.current) speechServiceRef.current.stop();
+    
+    if (audioMeterRef.current) {
+        clearInterval(audioMeterRef.current);
+        audioMeterRef.current = null;
+    }
+
     if (mediaRecorderRef.current?.state !== 'inactive') mediaRecorderRef.current?.stop();
     desktopStreamRef.current?.getTracks().forEach(t => t.stop());
     audioStreamRef.current?.getTracks().forEach(t => t.stop());
-  }, []);
+  };
 
   const handleMonitorBot = async (bot: BotStatus) => {
     if (appState.isRecording) {
@@ -140,19 +211,19 @@ export default function MeetingBotApp() {
     await handleStartAnalysis();
   };
 
-  const handleJoinMeeting = async (): Promise<void> => {
+  const handleJoinMeeting = async () => {
     if (!appState.meetingUrl.trim()) {
-      setAppState((prev: AppState) => ({ ...prev, error: 'Please enter a valid meeting URL' }));
+      setAppState((prev) => ({ ...prev, error: 'Please enter a valid meeting URL' }));
       return;
     }
 
     try {
-      setAppState((prev: AppState) => ({ ...prev, status: 'Joining meeting...', error: null }));
+      setAppState((prev) => ({ ...prev, status: 'Joining meeting...', error: null }));
 
       if (window.electronAPI) {
         const result = await window.electronAPI.joinMeeting(appState.meetingUrl);
         if (result.success) {
-          setAppState((prev: AppState) => ({
+          setAppState((prev) => ({
             ...prev,
             isInMeeting: true,
             status: 'Joined meeting. Click "Start Analysis" to begin.',
@@ -166,7 +237,7 @@ export default function MeetingBotApp() {
       }
     } catch (error) {
       console.error('Error joining meeting:', error);
-      setAppState((prev: AppState) => ({
+      setAppState((prev) => ({
         ...prev,
         error: (error as Error).message,
         status: 'Join failed',
@@ -174,20 +245,31 @@ export default function MeetingBotApp() {
     }
   };
 
-  const handleStartAnalysis = async (): Promise<void> => {
+  const handleStartAnalysis = async () => {
     try {
-      setAppState((prev: AppState) => ({ ...prev, status: 'Initializing...', error: null }));
+      setAppState((prev) => ({ ...prev, status: 'Initializing...', error: null }));
 
       const apiKey = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
 
       if (apiKey && apiKey !== 'your_deepgram_api_key_here') {
+        // Disconnect existing
+        if (transcriptionServiceRef.current) {
+            transcriptionServiceRef.current.disconnect();
+        }
+        
         transcriptionServiceRef.current = new TranscriptionService({ apiKey });
+        
+        // Connect passing a proxy function that calls the ref
         await transcriptionServiceRef.current.connect(
-          handleTranscriptUpdate,
+          (segment, data) => {
+              if (transcriptHandlerRef.current) {
+                  transcriptHandlerRef.current(segment, data);
+              }
+          },
           handleTranscriptionError
         );
       } else {
-        setAppState((prev: AppState) => ({
+        setAppState((prev) => ({
           ...prev,
           status: 'Running in demo mode (no real transcription).',
         }));
@@ -201,13 +283,13 @@ export default function MeetingBotApp() {
       await startAudioCapture();
       setSessionStartTime(Date.now());
 
-      setAppState((prev: AppState) => ({
+      setAppState((prev) => ({
         ...prev,
         isRecording: true,
         status: isControllerMode ? 'AI Controller Active: Analyzing & Intervening...' : 'Passive Recording...',
       }));
     } catch (error) {
-      setAppState((prev: AppState) => ({
+      setAppState((prev) => ({
         ...prev,
         error: `Failed to start analysis: ${(error as Error).message}`,
         status: 'Analysis failed',
@@ -216,10 +298,25 @@ export default function MeetingBotApp() {
     }
   };
 
-  const startAudioCapture = async (): Promise<void> => {
+  const startAudioCapture = async () => {
+    // 1. Session ID Check
+    const currentSessionId = captureSessionRef.current + 1;
+    captureSessionRef.current = currentSessionId;
+
+    // 2. Cleanup
+    if (audioMeterRef.current) {
+        clearInterval(audioMeterRef.current);
+        audioMeterRef.current = null;
+    }
+    if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach(t => t.stop());
+    }
+    if (desktopStreamRef.current) {
+        desktopStreamRef.current.getTracks().forEach(t => t.stop());
+    }
+
     let transcriptionAudioStream: MediaStream | null = null;
 
-    // 1. Try Electron Native Capture (Silent)
     if (window.electronAPI) {
         try {
             console.log('[Audio] Attempting silent desktop capture...');
@@ -245,15 +342,13 @@ export default function MeetingBotApp() {
                 // @ts-ignore
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 
-                // CRITICAL: Check if we actually got audio tracks
                 if (stream.getAudioTracks().length > 0) {
                     console.log('[Audio] Silent capture successful.');
                     transcriptionAudioStream = new MediaStream(stream.getAudioTracks());
                     desktopStreamRef.current = stream;
                 } else {
-                    console.warn('[Audio] Silent capture returned NO audio tracks. Stopping stream.');
+                    console.warn('[Audio] Silent capture returned NO audio tracks.');
                     stream.getTracks().forEach(t => t.stop());
-                    // transcriptionAudioStream remains null, triggering fallback below
                 }
             }
         } catch (e) {
@@ -261,10 +356,11 @@ export default function MeetingBotApp() {
         }
     }
 
-    // 2. Fallback to Interactive Picker (If silent failed)
     if (!transcriptionAudioStream) {
+        if (captureSessionRef.current !== currentSessionId) return; // Abort if stale
+
         console.log('[Audio] Falling back to interactive picker.');
-        setAppState(prev => ({...prev, status: '🚨 ACTION REQUIRED: Select Screen & Check "Share System Audio"'}));
+        setAppState(prev => ({...prev, status: '⚠️ ACTION REQUIRED: Select Screen & Check "Share System Audio"'}));
         
         try {
             const stream = await navigator.mediaDevices.getDisplayMedia({ 
@@ -281,7 +377,7 @@ export default function MeetingBotApp() {
                 desktopStreamRef.current = stream;
             } else {
                 stream.getTracks().forEach(t => t.stop());
-                throw new Error("You selected a screen but did not check 'Share System Audio'. Please try again.");
+                throw new Error("You selected a screen but did not check 'Share System Audio'.");
             }
         } catch (err) {
             console.error('[Audio] Picker capture failed:', err);
@@ -289,11 +385,17 @@ export default function MeetingBotApp() {
         }
     }
 
-    // 3. Start Recording
+    // 3. Final Session Check
+    if (captureSessionRef.current !== currentSessionId) {
+        console.log(`[Audio] Setup cancelled for session ${currentSessionId}.`);
+        transcriptionAudioStream?.getTracks().forEach(t => t.stop());
+        return; 
+    }
+
+    // 4. Start Recording
     if (transcriptionAudioStream) {
         audioStreamRef.current = transcriptionAudioStream;
         
-        // Debug: Audio Level Meter
         try {
             const audioContext = new AudioContext();
             const source = audioContext.createMediaStreamSource(transcriptionAudioStream);
@@ -301,79 +403,36 @@ export default function MeetingBotApp() {
             source.connect(analyzer);
             const dataArray = new Uint8Array(analyzer.frequencyBinCount);
             
-            setInterval(() => {
+            const intervalId = setInterval(() => {
+                if (captureSessionRef.current !== currentSessionId) {
+                    clearInterval(intervalId);
+                    return;
+                }
                 analyzer.getByteFrequencyData(dataArray);
                 const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
                 if (volume > 0) console.log(`[AudioMonitor] 🔊 Volume: ${volume.toFixed(1)}`);
             }, 3000);
+            
+            audioMeterRef.current = intervalId;
+
         } catch(e) { console.warn("Audio meter failed", e); }
 
         const mediaRecorder = new MediaRecorder(transcriptionAudioStream, { mimeType: 'audio/webm' });
         mediaRecorderRef.current = mediaRecorder;
 
         mediaRecorder.ondataavailable = async (event: BlobEvent) => {
+            if (captureSessionRef.current !== currentSessionId) return;
+
             if (event.data && event.data.size > 0 && transcriptionServiceRef.current?.isWebSocketConnected()) {
                 const arrayBuffer = await event.data.arrayBuffer();
                 transcriptionServiceRef.current.sendAudio(arrayBuffer);
             }
         };
 
-        // Send chunks more frequently (250ms) to prevent timeouts
         mediaRecorder.start(250); 
         console.log('[Audio] MediaRecorder started.');
     }
   };
-
-  const handleTranscriptUpdate = useCallback(
-    async (segment: TranscriptSegment, data: DeepgramResponse): Promise<void> => {
-      
-      if (currentVisualSpeaker) {
-          setSpeakerMapping(prev => ({
-              ...prev,
-              [segment.speakerIndex]: currentVisualSpeaker
-          }));
-      }
-
-      const realName = speakerMapping[segment.speakerIndex] || `Speaker ${segment.speakerIndex}`;
-      segment.speaker = realName;
-
-      if (analyticsServiceRef.current) {
-        analyticsServiceRef.current.addTranscriptSegment(segment);
-        const sentiment = analyticsServiceRef.current.analyzeSentiment(segment.text);
-        setCurrentSentiment({
-            emotion: sentiment.overall,
-            score: sentiment.score
-        });
-      }
-
-      setTranscript((prev: TranscriptSegment[]) => {
-        const existingIndex = prev.findIndex(s => s.speakerIndex === segment.speakerIndex && !s.isFinal);
-        if (data.is_final) {
-          segment.isFinal = true;
-          return existingIndex !== -1 ? prev.map((s, i) => i === existingIndex ? segment : s) : [...prev, segment];
-        } else {
-          return existingIndex !== -1 ? prev.map((s, i) => i === existingIndex ? segment : s) : [...prev, segment];
-        }
-      });
-
-      if (data.is_final && segment.text.trim().length > 0) {
-        const newEntry = {
-          speaker: realName,
-          text: segment.text,
-          timestamp: new Date(sessionStartTime + segment.startTime * 1000).toLocaleTimeString(),
-          confidence: segment.confidence,
-        };
-        fullTranscriptRef.current = [...fullTranscriptRef.current, newEntry];
-
-        if (isControllerMode) {
-            await evaluateIntervention(segment);
-        } else {
-            checkForBotMention(segment);
-        }
-      }
-    },
-    [sessionStartTime, isControllerMode, speakerMapping, currentVisualSpeaker] 
-  );
 
   const evaluateIntervention = async (segment: TranscriptSegment) => {
     if (!geminiServiceRef.current) return;
@@ -397,13 +456,13 @@ export default function MeetingBotApp() {
     }
   };
 
-  const handleBotResponse = async (userMessage: string, isProactive: boolean = false): Promise<void> => {
+  const handleBotResponse = async (userMessage: string, isProactive: boolean = false) => {
     if (!geminiServiceRef.current) return;
 
     try {
       const thinkingMessage: BotResponse = {
         speaker: 'Bot',
-        text: isProactive ? '💡 Intervening...' : 'Thinking...',
+        text: isProactive ? '🤖 Intervening...' : 'Thinking...',
         timestamp: Date.now(),
       };
       setBotResponses((prev) => [...prev, thinkingMessage]);
@@ -436,18 +495,24 @@ export default function MeetingBotApp() {
     }
   };
 
-  const handleTranscriptionError = useCallback((error: Error): void => {
+  const handleTranscriptionError = (error: Error) => {
     setAppState((prev) => ({ ...prev, error: `Transcription error: ${error.message}` }));
-  }, []);
+  };
 
-  const handleStopAnalysis = (): void => {
+  const handleStopAnalysis = () => {
+    captureSessionRef.current += 1; // Invalidate session
+
+    if (audioMeterRef.current) {
+        clearInterval(audioMeterRef.current);
+        audioMeterRef.current = null;
+    }
     mediaRecorderRef.current?.stop();
     desktopStreamRef.current?.getTracks().forEach(t => t.stop());
     transcriptionServiceRef.current?.disconnect();
     setAppState((prev) => ({ ...prev, isRecording: false, status: 'Analysis stopped' }));
   };
 
-  const handleLeaveMeeting = async (id?: string): Promise<void> => {
+  const handleLeaveMeeting = async (id?: string) => {
     const isMonitoringCurrentSession = !id || (id && appState.currentSession?.id === id);
 
     if (isMonitoringCurrentSession) {
@@ -490,12 +555,11 @@ export default function MeetingBotApp() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        
         <header className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
           <div>
             <h1 className="text-3xl font-bold text-indigo-700">AI Fleet Commander</h1>
             <p className="text-gray-500 text-sm mt-1">
-                {isControllerMode ? "🔴 CONTROLLER MODE ACTIVE" : "🟢 PASSIVE LISTENER MODE"}
+                {isControllerMode ? "🤖 CONTROLLER MODE ACTIVE" : "🎧 PASSIVE LISTENER MODE"}
             </p>
           </div>
           <div className="flex gap-4">
@@ -594,7 +658,7 @@ export default function MeetingBotApp() {
                                             {speakerMapping[t.speakerIndex] || t.speaker}
                                         </span>
                                         <span className="text-[10px] text-gray-400">
-                                            {new Date(sessionStartTime + t.startTime * 1000).toLocaleTimeString()}
+                                            {new Date(t.startTime).toLocaleTimeString()}
                                         </span>
                                     </div>
                                     <p className={`text-sm p-3 rounded-lg ${t.isFinal ? 'bg-gray-50 text-gray-800' : 'bg-gray-50/50 text-gray-400 italic'}`}>
@@ -631,7 +695,6 @@ export default function MeetingBotApp() {
                 </div>
              </div>
         </div>
-
       </div>
     </div>
   );
