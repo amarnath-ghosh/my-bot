@@ -1,29 +1,18 @@
 // types/global.d.ts
-export type BotState = "idle" | "joining" | "in_meeting" | "error" | "ended";
-
-export interface MeetingStatus {
-  meetingID: string;
-  meetingName: string;
-  participantCount?: number;
-  isRunning?: boolean;
-  botState: BotState;
-  lastError?: string;
-}
+import { ElectronAPI } from '../lib/types';
 
 declare global {
   interface Window {
-    botApi: {
-      onMeetingsUpdate(
-        cb: (meetings: MeetingStatus[]) => void
-      ): void;
-      getSnapshot(): Promise<MeetingStatus[]>;
-      join(id: string): Promise<void>;
-      leave(id: string): Promise<void>;
-      restart(id: string): Promise<void>;
-      setAutoManage(enabled: boolean): Promise<void>;
+    // API for the main UI (app/page.tsx)
+    electronAPI?: ElectronAPI;
+
+    // API for the meeting window (electron/contentScript.ts)
+    meetingAPI?: {
+      onBotSpeak: (callback: (pcmData: Float32Array) => void) => () => void;
+      sendAudio: (audioData: Uint8Array) => void;
     };
   }
 }
 
 // Important so this file is treated as a module
-export {};
+export { };

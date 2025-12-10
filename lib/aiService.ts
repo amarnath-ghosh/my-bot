@@ -160,5 +160,3 @@ Please summarize:
     }
   }
 }
-
-export default new GeminiService();

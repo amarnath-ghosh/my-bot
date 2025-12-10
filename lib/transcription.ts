@@ -20,7 +20,7 @@ export class TranscriptionService {
   constructor(config: TranscriptionConfig) {
     this.config = {
       language: 'en',
-      model: 'nova-2-meeting', // Use the meeting-specific model
+      model: 'nova-2-meeting',
       diarize: true,
       punctuate: true,
       profanityFilter: false,
@@ -62,30 +62,30 @@ export class TranscriptionService {
 
           if (data.channel?.alternatives?.[0]?.transcript) {
             const segment = this.processDeepgramResponse(data);
-            onTranscript(segment, data); // Pass the full data object
+            onTranscript(segment, data);
+          } else if (data.is_final) {
+             // Sometimes is_final comes with empty transcript, we still process it
+             const segment = this.processDeepgramResponse(data);
+             onTranscript(segment, data);
           }
         } catch (error) {
           console.error('Error processing Deepgram response:', error);
-          if (onError) {
-            onError(error as Error);
-          }
         }
       };
 
       this.ws.onerror = (event: any) => {
         console.error('Deepgram WebSocket error:', onError);
         this.isConnected = false;
-        if (onError) {
-          onError(new Error('WebSocket connection error'));
-        }
+        if (onError) onError(new Error('WebSocket connection error'));
       };
 
       this.ws.onclose = (event: any) => {
         console.log('Deepgram WebSocket closed:', event.code, event.reason);
         this.isConnected = false;
 
-        // Attempt to reconnect if not intentionally closed
+        // 1000 = Normal Closure (Intentional). 
         if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+          console.log(`Attempting reconnect ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts}...`);
           setTimeout(() => {
             this.reconnectAttempts++;
             this.connect(onTranscript, onError);
@@ -94,49 +94,44 @@ export class TranscriptionService {
       };
     } catch (error) {
       console.error('Error connecting to Deepgram:', error);
-      if (onError) {
-        onError(error as Error);
-      }
+      if (onError) onError(error as Error);
     }
   }
 
   sendAudio(audioData: ArrayBuffer): void {
     if (this.ws && this.isConnected && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(audioData);
-    } else {
-      console.warn('WebSocket is not connected, cannot send audio data');
     }
   }
 
   private processDeepgramResponse(data: DeepgramResponse): TranscriptSegment {
-    const alternative = data.channel.alternatives[0];
-    const words: WordSegment[] =
-      alternative.words?.map(word => ({
-        word: word.word,
-        startTime: word.start * 1000, // Convert to milliseconds
-        endTime: word.end * 1000,
-        confidence: word.confidence,
-        speaker: word.speaker,
-      })) || [];
+    const alternative = data.channel?.alternatives?.[0];
+    const words = alternative?.words?.map(word => ({
+      word: word.word,
+      startTime: word.start * 1000,
+      endTime: word.end * 1000,
+      confidence: word.confidence,
+      speaker: word.speaker,
+    })) || [];
 
-    // Determine speaker index from words
-    const speakerIndex =
-      words.length > 0 && words[0].speaker !== undefined ? words[0].speaker : 0;
+    const speakerIndex = words.length > 0 && words[0].speaker !== undefined ? words[0].speaker : 0;
 
     return {
       speaker: `Speaker ${speakerIndex}`,
       speakerIndex,
-      text: alternative.transcript,
+      text: alternative?.transcript || "",
       startTime: words.length > 0 ? words[0].startTime : Date.now(),
       endTime: words.length > 0 ? words[words.length - 1].endTime : Date.now(),
-      confidence: alternative.confidence,
+      confidence: alternative?.confidence || 0,
       words,
-      isFinal: data.is_final, // Pass this property
+      isFinal: data.is_final,
     };
   }
 
   disconnect(): void {
     if (this.ws) {
+      // Prevents reconnection attempts
+      this.reconnectAttempts = this.maxReconnectAttempts + 1; 
       this.ws.close(1000, 'Intentional disconnect');
       this.ws = null;
       this.isConnected = false;

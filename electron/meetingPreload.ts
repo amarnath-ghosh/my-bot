@@ -28,7 +28,7 @@ contextBridge.exposeInMainWorld('meetingAPI', {
 
 declare global {
   interface Window {
-    meetingAPI: {
+    meetingAPI?: {
       onBotSpeak(cb: (pcmData: Float32Array) => void): () => void;
       sendAudio(audioData: Uint8Array): void;
     };
