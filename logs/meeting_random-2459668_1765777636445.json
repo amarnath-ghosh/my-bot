@@ -1,0 +1,325 @@
+{
+  "session": {
+    "id": "session_1765777340718",
+    "url": "https://bbb.employability.life/bigbluebutton/api/join?meetingID=random-2459668&fullName=Meeting+Bot&password=ap&checksum=ef4ace6970e374cf13c6772605b2ade5cfc25bdc",
+    "startTime": 1765777340718,
+    "endTime": 1765777636445,
+    "participants": [
+      "Speaker 0",
+      "Final"
+    ]
+  },
+  "transcription": [
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:21.045Z",
+      "startTime": 1765777521044,
+      "endTime": 1765777521044,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:24.432Z",
+      "startTime": 1765777524432,
+      "endTime": 1765777524432,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "text": "Hello Bot, are you there?",
+      "timestamp": "2025-12-15T05:45:25.332Z"
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:27.813Z",
+      "startTime": 1765777527813,
+      "endTime": 1765777527813,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:31.167Z",
+      "startTime": 1765777531167,
+      "endTime": 1765777531167,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:34.503Z",
+      "startTime": 1765777534503,
+      "endTime": 1765777534503,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:38.022Z",
+      "startTime": 1765777538022,
+      "endTime": 1765777538022,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:41.722Z",
+      "startTime": 1765777541722,
+      "endTime": 1765777541722,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:45.797Z",
+      "startTime": 1765777545797,
+      "endTime": 1765777545797,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:50.135Z",
+      "startTime": 1765777550135,
+      "endTime": 1765777550135,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:54.497Z",
+      "startTime": 1765777554497,
+      "endTime": 1765777554497,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:45:58.903Z",
+      "startTime": 1765777558903,
+      "endTime": 1765777558903,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:03.293Z",
+      "startTime": 1765777563293,
+      "endTime": 1765777563293,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:06.756Z",
+      "startTime": 1765777566756,
+      "endTime": 1765777566756,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:10.692Z",
+      "startTime": 1765777570692,
+      "endTime": 1765777570692,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:14.044Z",
+      "startTime": 1765777574044,
+      "endTime": 1765777574044,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:17.565Z",
+      "startTime": 1765777577565,
+      "endTime": 1765777577565,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:22.229Z",
+      "startTime": 1765777582229,
+      "endTime": 1765777582229,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:28.804Z",
+      "startTime": 1765777588804,
+      "endTime": 1765777588804,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:33.660Z",
+      "startTime": 1765777593660,
+      "endTime": 1765777593660,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:37.705Z",
+      "startTime": 1765777597705,
+      "endTime": 1765777597705,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:43.527Z",
+      "startTime": 1765777603527,
+      "endTime": 1765777603527,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-15T05:46:44.774Z",
+      "startTime": 70800,
+      "endTime": 71144,
+      "confidence": 0.8515625,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 70800,
+          "endTime": 71144,
+          "confidence": 0.8515625,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-15T05:46:46.096Z",
+      "startTime": 70560.005,
+      "endTime": 71060.005,
+      "confidence": 0.70751953,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 70560.005,
+          "endTime": 71060.005,
+          "confidence": 0.70751953,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:51.675Z",
+      "startTime": 1765777611675,
+      "endTime": 1765777611675,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:55.503Z",
+      "startTime": 1765777615503,
+      "endTime": 1765777615503,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:46:58.716Z",
+      "startTime": 1765777618715,
+      "endTime": 1765777618715,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:47:02.404Z",
+      "startTime": 1765777622404,
+      "endTime": 1765777622404,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:47:07.378Z",
+      "startTime": 1765777627378,
+      "endTime": 1765777627378,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-15T05:47:12.975Z",
+      "startTime": 1765777632975,
+      "endTime": 1765777632975,
+      "confidence": 0,
+      "words": []
+    }
+  ]
+}

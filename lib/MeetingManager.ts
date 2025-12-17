@@ -382,7 +382,7 @@ export class MeetingManager {
     }
 
     const entry = {
-      speaker: segment.isFinal ? "Final" : "Interim",
+      speaker: (segment as any).speaker || (segment.isFinal ? "Final" : "Interim"),
       // If we have precise speaker info, rely on that, otherwise fallback
       speakerIndex: (segment as any).speakerIndex,
       text: segment.text,

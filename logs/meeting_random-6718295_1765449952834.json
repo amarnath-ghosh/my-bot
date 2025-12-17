@@ -1,0 +1,453 @@
+{
+  "session": {
+    "id": "session_1765449883058",
+    "url": "https://bbb.employability.life/bigbluebutton/api/join?meetingID=random-6718295&fullName=Meeting+Bot&password=ap&checksum=a0d8e369ff8e520b41a407e516a695a3bf2c073b",
+    "startTime": 1765449883058,
+    "endTime": 1765449952833,
+    "participants": [
+      "Final",
+      "Interim"
+    ]
+  },
+  "transcription": [
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:00.988Z",
+      "startTime": 1765449900988,
+      "endTime": 1765449900988,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:04.280Z",
+      "startTime": 1765449904280,
+      "endTime": 1765449904280,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:09.053Z",
+      "startTime": 1765449909053,
+      "endTime": 1765449909053,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:13.125Z",
+      "startTime": 1765449913125,
+      "endTime": 1765449913125,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:17.319Z",
+      "startTime": 1765449917319,
+      "endTime": 1765449917319,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:21.358Z",
+      "startTime": 1765449921358,
+      "endTime": 1765449921358,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:27.399Z",
+      "startTime": 1765449927399,
+      "endTime": 1765449927399,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-11T10:45:33.220Z",
+      "startTime": 33150,
+      "endTime": 33552,
+      "confidence": 0.8588867,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 33150,
+          "endTime": 33552,
+          "confidence": 0.8588867,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-11T10:45:33.538Z",
+      "startTime": 33390,
+      "endTime": 33832,
+      "confidence": 0.84716797,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 33390,
+          "endTime": 33832,
+          "confidence": 0.84716797,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:33.621Z",
+      "startTime": 1765449933621,
+      "endTime": 1765449933621,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-11T10:45:33.628Z",
+      "startTime": 33530,
+      "endTime": 33912,
+      "confidence": 0.7746582,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 33530,
+          "endTime": 33912,
+          "confidence": 0.7746582,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello. Hello.",
+      "timestamp": "2025-12-11T10:45:34.807Z",
+      "startTime": 32650,
+      "endTime": 34190,
+      "confidence": 0.98657227,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 32650,
+          "endTime": 33150,
+          "confidence": 0.7470703,
+          "speaker": 0
+        },
+        {
+          "word": "hello",
+          "startTime": 33690,
+          "endTime": 34190,
+          "confidence": 0.98657227,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Hello. Hello.",
+      "timestamp": "2025-12-11T10:45:36.071Z",
+      "startTime": 32570,
+      "endTime": 34190,
+      "confidence": 0.9777832,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 32570,
+          "endTime": 33070,
+          "confidence": 0.78881836,
+          "speaker": 0
+        },
+        {
+          "word": "hello",
+          "startTime": 33690,
+          "endTime": 34190,
+          "confidence": 0.9777832,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Hello. Hello.",
+      "timestamp": "2025-12-11T10:45:37.120Z",
+      "startTime": 32650,
+      "endTime": 34190,
+      "confidence": 0.9770508,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 32650,
+          "endTime": 33150,
+          "confidence": 0.77441406,
+          "speaker": 0
+        },
+        {
+          "word": "hello",
+          "startTime": 33690,
+          "endTime": 34190,
+          "confidence": 0.9770508,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Can you hear me?",
+      "timestamp": "2025-12-11T10:45:40.961Z",
+      "startTime": 38910,
+      "endTime": 39752,
+      "confidence": 0.99902344,
+      "words": [
+        {
+          "word": "can",
+          "startTime": 38910,
+          "endTime": 39070,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "you",
+          "startTime": 39070,
+          "endTime": 39310,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "hear",
+          "startTime": 39310,
+          "endTime": 39550,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "me",
+          "startTime": 39550,
+          "endTime": 39752,
+          "confidence": 0.8703613,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Can you hear me?",
+      "timestamp": "2025-12-11T10:45:41.869Z",
+      "startTime": 38910,
+      "endTime": 40210,
+      "confidence": 0.99902344,
+      "words": [
+        {
+          "word": "can",
+          "startTime": 38910,
+          "endTime": 39150,
+          "confidence": 0.9970703,
+          "speaker": 0
+        },
+        {
+          "word": "you",
+          "startTime": 39150,
+          "endTime": 39390,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "hear",
+          "startTime": 39390,
+          "endTime": 39710,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "me",
+          "startTime": 39710,
+          "endTime": 40210,
+          "confidence": 0.9921875,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Can you hear me?",
+      "timestamp": "2025-12-11T10:45:42.404Z",
+      "startTime": 38910,
+      "endTime": 40210,
+      "confidence": 0.99902344,
+      "words": [
+        {
+          "word": "can",
+          "startTime": 38910,
+          "endTime": 39150,
+          "confidence": 0.9970703,
+          "speaker": 0
+        },
+        {
+          "word": "you",
+          "startTime": 39150,
+          "endTime": 39390,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "hear",
+          "startTime": 39390,
+          "endTime": 39710,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "me",
+          "startTime": 39710,
+          "endTime": 40210,
+          "confidence": 0.99316406,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Okay. In",
+      "timestamp": "2025-12-11T10:45:47.239Z",
+      "startTime": 44260,
+      "endTime": 44824,
+      "confidence": 0.9641113,
+      "words": [
+        {
+          "word": "okay",
+          "startTime": 44260,
+          "endTime": 44500,
+          "confidence": 0.9641113,
+          "speaker": 0
+        },
+        {
+          "word": "in",
+          "startTime": 44500,
+          "endTime": 44824,
+          "confidence": 0.43920898,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-11T10:45:48.497Z",
+      "startTime": 1765449948497,
+      "endTime": 1765449948497,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Interim",
+      "speakerIndex": 0,
+      "text": "Okay. Now it's working.",
+      "timestamp": "2025-12-11T10:45:48.504Z",
+      "startTime": 44180,
+      "endTime": 45560,
+      "confidence": 0.9926758,
+      "words": [
+        {
+          "word": "okay",
+          "startTime": 44180,
+          "endTime": 44660,
+          "confidence": 0.888916,
+          "speaker": 0
+        },
+        {
+          "word": "now",
+          "startTime": 44660,
+          "endTime": 44900,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "it's",
+          "startTime": 44900,
+          "endTime": 45060,
+          "confidence": 0.9926758,
+          "speaker": 0
+        },
+        {
+          "word": "working",
+          "startTime": 45060,
+          "endTime": 45560,
+          "confidence": 0.9838867,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Final",
+      "speakerIndex": 0,
+      "text": "Okay. Now it's working.",
+      "timestamp": "2025-12-11T10:45:49.224Z",
+      "startTime": 44260.002,
+      "endTime": 45560,
+      "confidence": 0.9904785,
+      "words": [
+        {
+          "word": "okay",
+          "startTime": 44260.002,
+          "endTime": 44580,
+          "confidence": 0.8989258,
+          "speaker": 0
+        },
+        {
+          "word": "now",
+          "startTime": 44580,
+          "endTime": 44820,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "it's",
+          "startTime": 44820,
+          "endTime": 45060,
+          "confidence": 0.9790039,
+          "speaker": 0
+        },
+        {
+          "word": "working",
+          "startTime": 45060,
+          "endTime": 45560,
+          "confidence": 0.9904785,
+          "speaker": 0
+        }
+      ]
+    }
+  ]
+}
