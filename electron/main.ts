@@ -20,10 +20,49 @@ function createWindow() {
     },
   });
 
-  const appUrl = process.env.APP_URL || "http://localhost:3000";
-  console.log("[Main] Loading URL:", appUrl);
-  console.log("[Main] Preload path:", path.join(__dirname, "preload.js"));
-  mainWindow.loadURL(appUrl);
+  // Open DevTools for debugging
+  mainWindow.webContents.openDevTools();
+
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (isDev) {
+    const appUrl = process.env.APP_URL || "http://localhost:3000";
+    console.log("[Main] Loading URL (Dev):", appUrl);
+    console.log("[Main] Preload path:", path.join(__dirname, "preload.js"));
+
+    const loadUrlWithRetry = async (url: string, retries = 10) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          await mainWindow?.loadURL(url);
+          console.log(`[Main] Successfully loaded ${url}`);
+          return;
+        } catch (e: any) {
+          if (e.code === 'ERR_CONNECTION_REFUSED') {
+            console.log(`[Main] Connection refused, retrying in 1s... (${i + 1}/${retries})`);
+            await new Promise(r => setTimeout(r, 1000));
+          } else {
+            console.error(`[Main] Failed to load URL:`, e);
+            break;
+          }
+        }
+      }
+      console.error(`[Main] Failed to load ${url} after ${retries} attempts`);
+    };
+
+    loadUrlWithRetry(appUrl);
+  } else {
+    // Production: Load from file system
+    // Path: dist/electron/electron/main.js -> ../../../out/index.html
+    const indexPath = path.join(__dirname, "../../../out/index.html");
+    console.log("[Main] Loading File (Prod):", indexPath);
+    mainWindow.loadFile(indexPath).catch(e => {
+      console.error("[Main] Failed to load file:", e);
+    });
+  }
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
@@ -31,12 +70,21 @@ app.whenReady().then(() => {
   manager.start();
 
   // Push updates to renderer
+  // Push updates to renderer
   manager.onUpdate((meetings) => {
-    mainWindow?.webContents.send("meetings:update", meetings);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log(`[Main] Sending meeting update: ${meetings.length} meetings`);
+      mainWindow.webContents.send("meetings:update", meetings);
+    }
   });
 
   manager.onTranscript((data) => {
-    mainWindow?.webContents.send("bot:transcript", data);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log(`[Main] forwarding transcript: ${data.text.substring(0, 30)}...`);
+      mainWindow.webContents.send("bot:transcript", data);
+    } else {
+      console.warn("[Main] MainWindow not available to send transcript");
+    }
   });
 
   // Handle manual commands
@@ -49,7 +97,10 @@ app.whenReady().then(() => {
   ipcMain.handle("bot:restart", (_e, meetingID: string) =>
     manager.manualRestart(meetingID)
   );
-  ipcMain.handle("bot:getSnapshot", () => manager.getSnapshot());
+  ipcMain.handle("bot:getSnapshot", () => {
+    console.log("[Main] Handling bot:getSnapshot request");
+    return manager.getSnapshot();
+  });
   ipcMain.handle("bot:setAutoManage", (_e, enabled: boolean) =>
     manager.setAutoManage(enabled)
   );

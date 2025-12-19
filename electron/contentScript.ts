@@ -86,104 +86,126 @@
             workletNode.connect(audioContext.destination);
             debugLog('[Bot-Audio] WorkletNode connected to destination.');
 
-            // 5. Connect WebRTC Tracks
-            const NativeRTCPeerConnection = window.RTCPeerConnection;
-            class PatchedRTCPeerConnection extends NativeRTCPeerConnection {
-                constructor(config?: RTCConfiguration) {
-                    super(config);
-                    this.addEventListener('track', async (e) => {
-                        if (e.track.kind === 'audio') {
-                            debugLog('[Bot-WebRTC] 🎤 Remote Audio Track Found!');
 
-                            // Capture Sender for TTS
-                            setTimeout(() => this.findAudioSender(e.track), 1000);
+            // 5. Connect WebRTC Tracks Logic
+            const processedTracks = new Set<string>();
 
-                            try {
-                                const stream = new MediaStream([e.track]);
-                                const source = audioContext.createMediaStreamSource(stream);
-                                source.connect(workletNode);
-                                debugLog('[Bot-Audio] Connected Source -> WorkletNode');
+            const handleTrack = async (track: MediaStreamTrack) => {
+                // Ensure we don't process the same track ID twice
+                if (processedTracks.has(track.id)) return;
+                processedTracks.add(track.id);
 
-                                if (audioContext.state === 'suspended') {
-                                    await audioContext.resume();
-                                    debugLog('[Bot-Audio] Context Resumed.');
-                                }
-                            } catch (err) {
-                                debugLog(`[Bot-Audio] Error connecting: ${err}`);
-                            }
+                if (track.kind === 'audio') {
+                    debugLog(`[Bot-Content] 🎤 Found Remote Audio Track: ${track.id}`);
+                    try {
+                        const stream = new MediaStream([track]);
+                        const source = audioContext.createMediaStreamSource(stream);
+                        source.connect(workletNode);
+                        debugLog('[Bot-Audio] Connected Source -> WorkletNode');
+
+                        if (audioContext.state === 'suspended') {
+                            await audioContext.resume();
+                            debugLog('[Bot-Audio] Context Resumed.');
                         }
-                    });
+                    } catch (err) {
+                        debugLog(`[Bot-Audio] Error connecting: ${err}`);
+                    }
+                }
+            };
+
+            // A. Listen for new tracks from the preload patch
+            window.addEventListener('bot-remote-track', (e: any) => {
+                if (e.detail && e.detail.track) {
+                    handleTrack(e.detail.track);
+                }
+            });
+
+            // B. Process existing buffered tracks that arrived before this script loaded
+            const existingTracks = (window as any).__BOT_TRACKS || [];
+            if (existingTracks.length > 0) {
+                debugLog(`[Bot-Content] Processing ${existingTracks.length} buffered tracks...`);
+                existingTracks.forEach(handleTrack);
+            }
+
+            debugLog('[Bot-Content] Listening for WebRTC tracks...');
+
+            debugLog('[Bot-Content] Listening for WebRTC tracks...');
+
+            // 6. Handle TTS (Play Audio) - WITH QUEUE
+            const api = (window as any).meetingAPI;
+            const audioQueue: Float32Array[] = [];
+            let isProcessingQueue = false;
+
+            async function processAudioQueue() {
+                if (isProcessingQueue || audioQueue.length === 0) return;
+
+                if (!localAudioSender) {
+                    debugLog('[Bot-TTS] ❌ Cannot play: No Audio Sender found.');
+                    // Don't clear queue immediately, maybe sender will appear? 
+                    // But to avoid buildup, maybe we wait or retry?
+                    // Let's just return and hope finding logic works.
+                    // Actually, if we consume queue without playing, we lose data.
+                    // Let's Retry in 1s.
+                    setTimeout(processAudioQueue, 1000);
+                    return;
                 }
 
-                findAudioSender(track: MediaStreamTrack) {
-                    const senders = this.getSenders();
-                    const sender = senders.find(s => s.track && s.track.kind === 'audio');
-                    if (sender) {
-                        debugLog('[Bot-WebRTC] ✅ Audio Sender Captured for TTS.');
-                        localAudioSender = sender;
-                        originalUserTrack = sender.track;
-                    } else {
-                        debugLog('[Bot-WebRTC] ⚠️ Audio Sender NOT found yet.');
+                isProcessingQueue = true;
+                const pcmData = audioQueue.shift();
+
+                if (!pcmData) {
+                    isProcessingQueue = false;
+                    return;
+                }
+
+                try {
+                    debugLog(`[Bot-TTS] 🗣️ Playing chunk of ${pcmData.length} samples...`);
+                    // Create context for EACH playback to ensure clean state
+                    const playbackCtx = new AudioContext({ sampleRate: 24000 });
+
+                    const buffer = playbackCtx.createBuffer(1, pcmData.length, 24000);
+                    buffer.copyToChannel(pcmData as any, 0);
+
+                    const source = playbackCtx.createBufferSource();
+                    source.buffer = buffer;
+
+                    const destination = playbackCtx.createMediaStreamDestination();
+                    source.connect(destination);
+
+                    const botTrack = destination.stream.getAudioTracks()[0];
+
+                    await localAudioSender.replaceTrack(botTrack);
+                    source.start();
+
+                    await new Promise<void>((resolve) => {
+                        source.onended = () => resolve();
+                    });
+
+                    // Cleanup
+                    source.disconnect();
+                    await playbackCtx.close();
+
+                } catch (e) {
+                    debugLog(`[Bot-TTS] Playback Error: ${e}`);
+                } finally {
+                    // Restore original mic
+                    if (localAudioSender && originalUserTrack) {
+                        await localAudioSender.replaceTrack(originalUserTrack).catch((err) => {
+                            debugLog(`[Bot-TTS] Error restoring mic: ${err}`);
+                        });
                     }
+
+                    isProcessingQueue = false;
+                    // Trigger next item
+                    processAudioQueue();
                 }
             }
-            window.RTCPeerConnection = PatchedRTCPeerConnection;
-            debugLog('[Bot-Content] WebRTC Patched. Waiting for meeting...');
 
-            // 6. Handle TTS (Play Audio)
-            const api = (window as any).meetingAPI;
             if (api && typeof api.onBotSpeak === 'function') {
                 api.onBotSpeak(async (pcmData: Float32Array) => {
-                    debugLog(`[Bot-TTS] Received ${pcmData.length} samples to play.`);
-
-                    if (!localAudioSender) {
-                        debugLog('[Bot-TTS] ❌ Cannot play: No Audio Sender found.');
-                        return;
-                    }
-
-                    if (audioSwapLock) {
-                        debugLog('[Bot-TTS] ⚠️ Already playing, skipping.');
-                        return;
-                    }
-                    audioSwapLock = true;
-
-                    try {
-                        // Create a separate context for playback to be safe (or reuse existing if stable)
-                        // Let's reuse audioContext since it's working now, but careful with sample rates.
-                        // Actually, let's create a new one for playback to avoid mixing sample rates logic
-                        const playbackCtx = new AudioContext({ sampleRate: 24000 }); // Typical TTS rate
-
-                        const buffer = playbackCtx.createBuffer(1, pcmData.length, 24000);
-                        buffer.copyToChannel(pcmData as any, 0);
-
-                        const source = playbackCtx.createBufferSource();
-                        source.buffer = buffer;
-
-                        const destination = playbackCtx.createMediaStreamDestination();
-                        source.connect(destination);
-
-                        const botTrack = destination.stream.getAudioTracks()[0];
-                        debugLog('[Bot-TTS] 🗣️ Swapping track to Bot Voice...');
-
-                        await localAudioSender.replaceTrack(botTrack);
-                        source.start();
-
-                        source.onended = async () => {
-                            debugLog('[Bot-TTS] Finished speaking. Restoring mic.');
-                            if (localAudioSender && originalUserTrack) {
-                                await localAudioSender.replaceTrack(originalUserTrack);
-                            }
-                            playbackCtx.close();
-                            audioSwapLock = false;
-                        };
-
-                    } catch (e) {
-                        debugLog(`[Bot-TTS] Playback Error: ${e}`);
-                        if (localAudioSender && originalUserTrack) {
-                            localAudioSender.replaceTrack(originalUserTrack).catch(() => { });
-                        }
-                        audioSwapLock = false;
-                    }
+                    debugLog(`[Bot-TTS] Received ${pcmData.length} samples. Added to queue.`);
+                    audioQueue.push(pcmData);
+                    processAudioQueue();
                 });
             }
 

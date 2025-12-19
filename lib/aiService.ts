@@ -96,7 +96,10 @@ If asked about specific topics, search the transcript and provide relevant infor
       return "No transcript available yet.";
     }
 
-    return transcriptHistory
+    // Limit context to the last 20 messages to avoid hitting token limits
+    const recentHistory = transcriptHistory.slice(-20);
+
+    return recentHistory
       .map((msg) => `[${msg.timestamp}] ${msg.speaker}: ${msg.text}`)
       .join("\n");
   }

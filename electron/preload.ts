@@ -5,7 +5,10 @@ import type { MeetingStatus } from "../lib/MeetingManager";
 console.log("[Preload] Script loaded");
 contextBridge.exposeInMainWorld("botApi", {
   onMeetingsUpdate(callback: (meetings: MeetingStatus[]) => void) {
-    const subscription = (_event: any, meetings: any) => callback(meetings);
+    const subscription = (_event: any, meetings: any) => {
+      console.log("[Preload] Received meetings update:", meetings);
+      callback(meetings);
+    };
     ipcRenderer.on("meetings:update", subscription);
     return () => ipcRenderer.removeListener("meetings:update", subscription);
   },

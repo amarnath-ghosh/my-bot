@@ -399,7 +399,8 @@ export class MeetingManager {
 
     this.emitTranscript({ meetingID, ...entry });
 
-    if (segment.text.toLowerCase().includes("bot") || segment.text.toLowerCase().includes("assistant")) {
+    // Only trigger on FINAL results to prevent multiple responses for the same sentence
+    if (segment.isFinal && (segment.text.toLowerCase().includes("bot") || segment.text.toLowerCase().includes("assistant"))) {
       console.log(`[MeetingManager] Bot mentioned! Generating response...`);
       const response = await this.aiService.generateResponse(segment.text, history);
       if (response) {

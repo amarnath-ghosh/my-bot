@@ -62,9 +62,10 @@ export class BbbClient {
       }
 
       const meetings = parsed.response.meetings?.meeting || [];
+      console.log(`[BbbClient] Parsed meetings raw:`, JSON.stringify(meetings));
       const list = Array.isArray(meetings) ? meetings : [meetings];
 
-      return list
+      const result = list
         .filter(Boolean)
         .map((m: any) => ({
           meetingID: m.meetingID,
@@ -75,6 +76,8 @@ export class BbbClient {
             : undefined,
           isRunning: m.running === "true",
         }));
+
+      return result;
     } catch (err) {
       console.error("[BbbClient] getMeetings error:", err);
       return [];

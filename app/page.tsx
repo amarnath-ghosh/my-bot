@@ -148,6 +148,11 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* Debug Footer */}
+        <div style={{ padding: '10px', borderTop: '1px solid #333', fontSize: '0.7rem', color: '#666' }}>
+          Debug: {meetings.length} meetings loaded.
+        </div>
       </div>
 
       {/* Main Area: details & Transcript */}
