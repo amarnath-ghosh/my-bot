@@ -6,6 +6,10 @@ import * as path from "path";
 // Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
+// Allow autoplay without user interaction
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
+
 let mainWindow: BrowserWindow | null = null;
 const manager = new MeetingManager();
 
@@ -112,5 +116,17 @@ app.whenReady().then(() => {
   ipcMain.on("bot:audio", (event, audioData) => {
     // Forward to manager to route to the correct transcription service
     manager.processAudioChunk(event.sender.id, audioData);
+  });
+
+  // Relay bot audio from main window to meeting windows
+  // This is used when UI wants to send TTS audio to a meeting
+  ipcMain.on('bot-speak-data', (event, pcmData: Float32Array) => {
+    // Verify sender is the main/control window
+    if (event.sender === mainWindow?.webContents) {
+      console.log(`[Main] Received bot-speak-data from main window (${pcmData.length} samples)`);
+
+      // Forward to all active meeting windows via manager
+      manager.sendBotAudioToMeetings(pcmData);
+    }
   });
 });

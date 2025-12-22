@@ -1,0 +1,773 @@
+{
+  "session": {
+    "id": "session_1766402220886",
+    "url": "https://bbb.employability.life/bigbluebutton/api/join?meetingID=random-5105534&fullName=Meeting+Bot&password=ap&checksum=e8c8943dfef2850f87a50785198f4c1a37ee8934",
+    "startTime": 1766402220886,
+    "endTime": 1766402497527,
+    "participants": [
+      "Speaker 0",
+      "Final",
+      "Speaker 1"
+    ]
+  },
+  "transcription": [
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "For current",
+      "timestamp": "2025-12-22T11:17:20.919Z",
+      "startTime": 480,
+      "endTime": 1000,
+      "confidence": 0.95410156,
+      "words": [
+        {
+          "word": "for",
+          "startTime": 480,
+          "endTime": 640,
+          "confidence": 0.6767578,
+          "speaker": 0
+        },
+        {
+          "word": "current",
+          "startTime": 640,
+          "endTime": 1000,
+          "confidence": 0.95410156,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "We're currently the only person in",
+      "timestamp": "2025-12-22T11:17:22.523Z",
+      "startTime": 480,
+      "endTime": 2000,
+      "confidence": 0.9980469,
+      "words": [
+        {
+          "word": "we're",
+          "startTime": 480,
+          "endTime": 640,
+          "confidence": 0.9572754,
+          "speaker": 0
+        },
+        {
+          "word": "currently",
+          "startTime": 640,
+          "endTime": 1040,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 1040,
+          "endTime": 1120,
+          "confidence": 0.9980469,
+          "speaker": 0
+        },
+        {
+          "word": "only",
+          "startTime": 1120,
+          "endTime": 1520,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "person",
+          "startTime": 1520,
+          "endTime": 1760,
+          "confidence": 0.99609375,
+          "speaker": 0
+        },
+        {
+          "word": "in",
+          "startTime": 1760,
+          "endTime": 2000,
+          "confidence": 0.9892578,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "We're currently the only person in this conference.",
+      "timestamp": "2025-12-22T11:17:23.482Z",
+      "startTime": 399.99998,
+      "endTime": 2740,
+      "confidence": 1,
+      "words": [
+        {
+          "word": "we're",
+          "startTime": 399.99998,
+          "endTime": 719.9999700000001,
+          "confidence": 0.89453125,
+          "speaker": 0
+        },
+        {
+          "word": "currently",
+          "startTime": 719.9999700000001,
+          "endTime": 1040,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "the",
+          "startTime": 1040,
+          "endTime": 1280,
+          "confidence": 0.9970703,
+          "speaker": 0
+        },
+        {
+          "word": "only",
+          "startTime": 1280,
+          "endTime": 1520,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "person",
+          "startTime": 1520,
+          "endTime": 1920,
+          "confidence": 0.99902344,
+          "speaker": 0
+        },
+        {
+          "word": "in",
+          "startTime": 1920,
+          "endTime": 2080,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "this",
+          "startTime": 2080,
+          "endTime": 2240,
+          "confidence": 1,
+          "speaker": 0
+        },
+        {
+          "word": "conference",
+          "startTime": 2240,
+          "endTime": 2740,
+          "confidence": 0.99853516,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:28.132Z",
+      "startTime": 1766402248132,
+      "endTime": 1766402248132,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:30.369Z",
+      "startTime": 1766402250368,
+      "endTime": 1766402250368,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:36.810Z",
+      "startTime": 1766402256810,
+      "endTime": 1766402256810,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:45.246Z",
+      "startTime": 1766402265246,
+      "endTime": 1766402265246,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:50.330Z",
+      "startTime": 1766402270330,
+      "endTime": 1766402270330,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:51.920Z",
+      "startTime": 1766402271919,
+      "endTime": 1766402271919,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:17:55.873Z",
+      "startTime": 1766402275873,
+      "endTime": 1766402275873,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:04.547Z",
+      "startTime": 1766402284547,
+      "endTime": 1766402284547,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:07.202Z",
+      "startTime": 1766402287202,
+      "endTime": 1766402287202,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:15.130Z",
+      "startTime": 1766402295130,
+      "endTime": 1766402295130,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:19.282Z",
+      "startTime": 1766402299282,
+      "endTime": 1766402299282,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:27.563Z",
+      "startTime": 1766402307563,
+      "endTime": 1766402307563,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:32.552Z",
+      "startTime": 1766402312552,
+      "endTime": 1766402312552,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:40.957Z",
+      "startTime": 1766402320957,
+      "endTime": 1766402320957,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:42.156Z",
+      "startTime": 1766402322156,
+      "endTime": 1766402322156,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:45.598Z",
+      "startTime": 1766402325598,
+      "endTime": 1766402325598,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:51.684Z",
+      "startTime": 1766402331684,
+      "endTime": 1766402331684,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:56.732Z",
+      "startTime": 1766402336732,
+      "endTime": 1766402336732,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:18:58.970Z",
+      "startTime": 1766402338970,
+      "endTime": 1766402338970,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:02.714Z",
+      "startTime": 1766402342714,
+      "endTime": 1766402342714,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:05.882Z",
+      "startTime": 1766402345882,
+      "endTime": 1766402345882,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:08.942Z",
+      "startTime": 1766402348942,
+      "endTime": 1766402348942,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Final",
+      "text": "Hello Bot, are you there?",
+      "timestamp": "2025-12-22T11:19:11.843Z"
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:21.212Z",
+      "startTime": 1766402361212,
+      "endTime": 1766402361212,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:21.504Z",
+      "startTime": 1766402361504,
+      "endTime": 1766402361504,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:21.504Z",
+      "startTime": 1766402361504,
+      "endTime": 1766402361504,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:25.659Z",
+      "startTime": 1766402365659,
+      "endTime": 1766402365659,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:29.090Z",
+      "startTime": 1766402369090,
+      "endTime": 1766402369090,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:19:31.742Z",
+      "startTime": 1766402371742,
+      "endTime": 1766402371742,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:40.321Z",
+      "startTime": 1766402440321,
+      "endTime": 1766402440321,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:42.137Z",
+      "startTime": 1766402442137,
+      "endTime": 1766402442137,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:44.441Z",
+      "startTime": 1766402444441,
+      "endTime": 1766402444441,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:47.452Z",
+      "startTime": 1766402447452,
+      "endTime": 1766402447452,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-22T11:20:48.032Z",
+      "startTime": 132110,
+      "endTime": 132610,
+      "confidence": 0.5930176,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 132110,
+          "endTime": 132610,
+          "confidence": 0.5930176,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:48.033Z",
+      "startTime": 1766402448033,
+      "endTime": 1766402448033,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "Hello?",
+      "timestamp": "2025-12-22T11:20:48.033Z",
+      "startTime": 133450,
+      "endTime": 133920,
+      "confidence": 0.83032227,
+      "words": [
+        {
+          "word": "hello",
+          "startTime": 133450,
+          "endTime": 133920,
+          "confidence": 0.83032227,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "Second transcription",
+      "timestamp": "2025-12-22T11:20:48.033Z",
+      "startTime": 135760,
+      "endTime": 136920,
+      "confidence": 0.98291016,
+      "words": [
+        {
+          "word": "second",
+          "startTime": 135760,
+          "endTime": 136260,
+          "confidence": 0.33251953,
+          "speaker": 0
+        },
+        {
+          "word": "transcription",
+          "startTime": 136480,
+          "endTime": 136920,
+          "confidence": 0.98291016,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "I can transcription as Chen again.",
+      "timestamp": "2025-12-22T11:20:48.825Z",
+      "startTime": 133920,
+      "endTime": 137860,
+      "confidence": 0.7631836,
+      "words": [
+        {
+          "word": "i",
+          "startTime": 133920,
+          "endTime": 134420,
+          "confidence": 0.26757812,
+          "speaker": 0
+        },
+        {
+          "word": "can",
+          "startTime": 135840,
+          "endTime": 136240,
+          "confidence": 0.9770508,
+          "speaker": 0
+        },
+        {
+          "word": "transcription",
+          "startTime": 136240,
+          "endTime": 136740,
+          "confidence": 0.7631836,
+          "speaker": 0
+        },
+        {
+          "word": "as",
+          "startTime": 136800,
+          "endTime": 136959.99,
+          "confidence": 0.5473633,
+          "speaker": 0
+        },
+        {
+          "word": "chen",
+          "startTime": 136959.99,
+          "endTime": 137360,
+          "confidence": 0.6738281,
+          "speaker": 0
+        },
+        {
+          "word": "again",
+          "startTime": 137360,
+          "endTime": 137860,
+          "confidence": 0.8955078,
+          "speaker": 0
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 1",
+      "speakerIndex": 1,
+      "text": "I can transcription as Chen again.",
+      "timestamp": "2025-12-22T11:20:48.825Z",
+      "startTime": 133920,
+      "endTime": 137860,
+      "confidence": 0.73339844,
+      "words": [
+        {
+          "word": "i",
+          "startTime": 133920,
+          "endTime": 134420,
+          "confidence": 0.2631836,
+          "speaker": 1
+        },
+        {
+          "word": "can",
+          "startTime": 134840,
+          "endTime": 135340,
+          "confidence": 0.97265625,
+          "speaker": 1
+        },
+        {
+          "word": "transcription",
+          "startTime": 135760,
+          "endTime": 136260,
+          "confidence": 0.73339844,
+          "speaker": 1
+        },
+        {
+          "word": "as",
+          "startTime": 136800,
+          "endTime": 136959.99,
+          "confidence": 0.4345703,
+          "speaker": 1
+        },
+        {
+          "word": "chen",
+          "startTime": 136959.99,
+          "endTime": 137360,
+          "confidence": 0.61621094,
+          "speaker": 1
+        },
+        {
+          "word": "again",
+          "startTime": 137360,
+          "endTime": 137860,
+          "confidence": 0.8547363,
+          "speaker": 1
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:49.113Z",
+      "startTime": 1766402449113,
+      "endTime": 1766402449113,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:49.402Z",
+      "startTime": 1766402449402,
+      "endTime": 1766402449402,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:49.698Z",
+      "startTime": 1766402449698,
+      "endTime": 1766402449698,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 0",
+      "speakerIndex": 0,
+      "text": "",
+      "timestamp": "2025-12-22T11:20:50.478Z",
+      "startTime": 1766402450478,
+      "endTime": 1766402450478,
+      "confidence": 0,
+      "words": []
+    },
+    {
+      "speaker": "Speaker 1",
+      "speakerIndex": 1,
+      "text": "I did",
+      "timestamp": "2025-12-22T11:21:06.777Z",
+      "startTime": 152040,
+      "endTime": 154532,
+      "confidence": 0.6699219,
+      "words": [
+        {
+          "word": "i",
+          "startTime": 152040,
+          "endTime": 152540,
+          "confidence": 0.6699219,
+          "speaker": 1
+        },
+        {
+          "word": "did",
+          "startTime": 154032,
+          "endTime": 154532,
+          "confidence": 0.4790039,
+          "speaker": 1
+        }
+      ]
+    },
+    {
+      "speaker": "Speaker 1",
+      "speakerIndex": 1,
+      "text": "I did the I'll task",
+      "timestamp": "2025-12-22T11:21:06.777Z",
+      "startTime": 155640,
+      "endTime": 157024,
+      "confidence": 0.45629883,
+      "words": [
+        {
+          "word": "i",
+          "startTime": 155640,
+          "endTime": 155880,
+          "confidence": 0.32641602,
+          "speaker": 1
+        },
+        {
+          "word": "did",
+          "startTime": 155880,
+          "endTime": 156120,
+          "confidence": 0.56152344,
+          "speaker": 1
+        },
+        {
+          "word": "the",
+          "startTime": 156120,
+          "endTime": 156590,
+          "confidence": 0.5004883,
+          "speaker": 1
+        },
+        {
+          "word": "i'll",
+          "startTime": 156840,
+          "endTime": 156932,
+          "confidence": 0.45629883,
+          "speaker": 1
+        },
+        {
+          "word": "task",
+          "startTime": 156932,
+          "endTime": 157024,
+          "confidence": 0.3786621,
+          "speaker": 1
+        }
+      ]
+    }
+  ]
+}

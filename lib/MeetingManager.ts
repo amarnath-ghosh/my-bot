@@ -5,6 +5,20 @@ import { GeminiService } from "./aiService";
 import { SpeechService } from "./speech";
 import * as path from "path";
 
+/**
+ * Converts raw 16-bit PCM (Int16Array) to 32-bit Float PCM (Float32Array)
+ * This is required because Web Audio API works with Float32
+ */
+function convertInt16ToFloat32(buffer: ArrayBuffer): Float32Array {
+  const int16Array = new Int16Array(buffer);
+  const float32Array = new Float32Array(int16Array.length);
+
+  for (let i = 0; i < int16Array.length; i++) {
+    float32Array[i] = int16Array[i] / 32768; // Normalize to -1.0 to 1.0 range
+  }
+  return float32Array;
+}
+
 export interface MeetingStatus {
   meetingID: string;
   meetingName: string;
@@ -85,6 +99,21 @@ export class MeetingManager {
 
   async getSnapshot(): Promise<MeetingStatus[]> {
     return Array.from(this.meetings.values());
+  }
+
+  /**
+   * Sends bot audio to all connected meeting windows.
+   * Used when audio is sent from the main UI via IPC.
+   */
+  sendBotAudioToMeetings(pcmData: Float32Array): void {
+    console.log(`[MeetingManager] Sending bot audio to ${this.botWindows.size} meeting window(s)`);
+
+    for (const [meetingID, win] of this.botWindows.entries()) {
+      if (win && !win.isDestroyed()) {
+        console.log(`[MeetingManager] Sending audio to meeting ${meetingID}`);
+        win.webContents.send('bot-speak', pcmData);
+      }
+    }
   }
 
   async manualJoin(meetingID: string) {
@@ -381,9 +410,28 @@ export class MeetingManager {
       if (!win) return;
     }
 
+    // Skip empty transcripts
+    if (!segment.text || segment.text.trim().length === 0) {
+      return;
+    }
+
+    // Only process final transcripts to avoid duplicates
+    if (!segment.isFinal) {
+      return;
+    }
+
+    const history = this.transcriptHistories.get(meetingID) || [];
+
+    // Prevent duplicate consecutive entries (same text from same speaker)
+    const lastEntry = history[history.length - 1];
+    const currentSpeaker = (segment as any).speaker || "Speaker";
+    if (lastEntry && lastEntry.text === segment.text && lastEntry.speaker === currentSpeaker) {
+      console.log('[MeetingManager] Skipping duplicate transcript entry');
+      return;
+    }
+
     const entry = {
-      speaker: (segment as any).speaker || (segment.isFinal ? "Final" : "Interim"),
-      // If we have precise speaker info, rely on that, otherwise fallback
+      speaker: currentSpeaker,
       speakerIndex: (segment as any).speakerIndex,
       text: segment.text,
       timestamp: new Date().toISOString(),
@@ -393,26 +441,66 @@ export class MeetingManager {
       words: (segment as any).words
     };
 
-    const history = this.transcriptHistories.get(meetingID) || [];
     history.push(entry);
     this.transcriptHistories.set(meetingID, history);
 
     this.emitTranscript({ meetingID, ...entry });
 
-    // Only trigger on FINAL results to prevent multiple responses for the same sentence
-    if (segment.isFinal && (segment.text.toLowerCase().includes("bot") || segment.text.toLowerCase().includes("assistant"))) {
+    // Check for bot trigger words
+    const triggerWords = ['bot', 'assistant', 'ai', 'hey bot', 'hello bot', 'hello bob'];
+    const textLower = segment.text.toLowerCase();
+    const isBotMentioned = triggerWords.some(trigger => textLower.includes(trigger));
+
+    if (isBotMentioned) {
+      // Prevent feedback loops (bot hearing itself)
+      if (textLower.includes("i'm sorry, i encountered an error") ||
+        textLower.includes('gemini') ||
+        textLower.includes('flash') ||
+        textLower.includes('meeting assistant')) {
+        console.warn('[MeetingManager] Detected potential feedback loop. Ignoring.');
+        return;
+      }
+
       console.log(`[MeetingManager] Bot mentioned! Generating response...`);
-      const response = await this.aiService.generateResponse(segment.text, history);
-      if (response) {
-        console.log(`[MeetingManager] AI Response: ${response}`);
-        const audioData = await this.speechService.createAudioData(response);
-        if (audioData) {
-          console.log(`[MeetingManager] Sending audio to window...`);
-          win.webContents.send('bot:speak', audioData);
+      try {
+        const response = await this.aiService.generateResponse(segment.text, history);
+        if (response) {
+          console.log(`[MeetingManager] AI Response: ${response}`);
+
+          // Add bot's response to the transcript history
+          const botEntry = {
+            speaker: "Bot",
+            speakerIndex: -1, // Special index for bot
+            text: response,
+            timestamp: new Date().toISOString(),
+            startTime: Date.now(),
+            endTime: Date.now(),
+            confidence: 1.0,
+            words: []
+          };
+          history.push(botEntry);
+          this.transcriptHistories.set(meetingID, history);
+          this.emitTranscript({ meetingID, ...botEntry });
+
+          // Get raw 16-bit PCM from Deepgram TTS
+          const rawPCMBuffer = await this.speechService.createAudioData(response);
+
+          if (rawPCMBuffer) {
+            // Convert Int16 PCM to Float32 PCM (required for Web Audio API)
+            const float32Audio = convertInt16ToFloat32(rawPCMBuffer);
+
+            console.log(`[MeetingManager] Sending ${float32Audio.length} Float32 samples to meeting window...`);
+
+            // Send to meeting window via IPC (channel must match meetingPreload.ts)
+            win.webContents.send('bot-speak', float32Audio);
+          }
         }
+      } catch (error) {
+        console.error(`[MeetingManager] Error in bot response flow:`, error);
       }
     }
   }
+
 
   async simulateHello(meetingID: string) {
     console.log(`[MeetingManager] Simulating 'Hello Bot' for ${meetingID}`);

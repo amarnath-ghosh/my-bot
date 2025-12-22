@@ -25,11 +25,21 @@ contextBridge.exposeInMainWorld("botApi", {
   setAutoManage: (enabled: boolean) =>
     ipcRenderer.invoke("bot:setAutoManage", enabled),
   simulateHello: (id: string) => ipcRenderer.invoke("bot:simulate-hello", id),
+
+  /**
+   * Sends Float32 PCM audio data to the main process,
+   * which relays it to the meeting window for injection.
+   */
+  sendBotAudio: (pcmData: Float32Array) => {
+    console.log("[Preload] sendBotAudio called with", pcmData.length, "samples");
+    ipcRenderer.send('bot-speak-data', pcmData);
+  },
 });
+
 
 declare global {
   interface Window {
-    botApi: {
+    botApi?: {
       onMeetingsUpdate(
         cb: (meetings: MeetingStatus[]) => void
       ): () => void;
@@ -40,6 +50,7 @@ declare global {
       restart(id: string): Promise<void>;
       setAutoManage(enabled: boolean): Promise<void>;
       simulateHello(id: string): Promise<void>;
+      sendBotAudio?(pcmData: Float32Array): void;
     };
   }
 }

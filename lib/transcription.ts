@@ -39,8 +39,8 @@ export class TranscriptionService {
         diarize: this.config.diarize.toString(),
         punctuate: this.config.punctuate.toString(),
         profanity_filter: this.config.profanityFilter.toString(),
-        interim_results: 'true',
-        endpointing: '300',
+        interim_results: 'false',     // Only final results to prevent duplicates
+        endpointing: '250',           // Balance between speed and accuracy (250ms silence = end of utterance)
         smart_format: 'true',
         encoding: 'linear16',
         sample_rate: '16000',
@@ -60,13 +60,13 @@ export class TranscriptionService {
         try {
           const data: DeepgramResponse = JSON.parse(event.data as string);
 
+          // Only process if we have a transcript (since interim_results is false, all are final)
           if (data.channel?.alternatives?.[0]?.transcript) {
             const segment = this.processDeepgramResponse(data);
-            onTranscript(segment, data);
-          } else if (data.is_final) {
-             // Sometimes is_final comes with empty transcript, we still process it
-             const segment = this.processDeepgramResponse(data);
-             onTranscript(segment, data);
+            // Only emit non-empty transcripts
+            if (segment.text.trim().length > 0) {
+              onTranscript(segment, data);
+            }
           }
         } catch (error) {
           console.error('Error processing Deepgram response:', error);
@@ -131,7 +131,7 @@ export class TranscriptionService {
   disconnect(): void {
     if (this.ws) {
       // Prevents reconnection attempts
-      this.reconnectAttempts = this.maxReconnectAttempts + 1; 
+      this.reconnectAttempts = this.maxReconnectAttempts + 1;
       this.ws.close(1000, 'Intentional disconnect');
       this.ws = null;
       this.isConnected = false;
