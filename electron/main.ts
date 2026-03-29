@@ -1,10 +1,7 @@
+import "./env";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { MeetingManager } from "../lib/MeetingManager";
-import * as dotenv from "dotenv";
 import * as path from "path";
-
-// Load environment variables from .env file
-dotenv.config({ path: path.join(__dirname, "../../../.env") });
 
 // Allow autoplay without user interaction
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
