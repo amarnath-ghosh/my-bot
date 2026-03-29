@@ -2,13 +2,95 @@ import "./env";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { MeetingManager } from "../lib/MeetingManager";
 import * as path from "path";
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
 
 // Allow autoplay without user interaction
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-
 let mainWindow: BrowserWindow | null = null;
 const manager = new MeetingManager();
+
+// --- SETUP WEBSOCKET SERVER FOR FRONTEND CLIENTS (WEB AND DESKTOP) ---
+const webApp = express();
+webApp.use(cors());
+const server = http.createServer(webApp);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+manager.onUpdate((meetings) => {
+  io.emit("meetings:update", meetings);
+});
+
+manager.onTranscript((data) => {
+  io.emit("bot:transcript", data);
+});
+
+io.on('connection', (socket) => {
+  console.log(`[Server] Client connected: ${socket.id}`);
+
+  socket.on("bot:join", async (meetingID: string, callback) => {
+    try {
+      await manager.manualJoin(meetingID);
+      callback?.({ success: true });
+    } catch (e: any) { callback?.({ error: e.message }); }
+  });
+
+  socket.on("bot:leave", async (meetingID: string, callback) => {
+    try {
+      await manager.manualLeave(meetingID);
+      callback?.({ success: true });
+    } catch (e: any) { callback?.({ error: e.message }); }
+  });
+
+  socket.on("bot:restart", async (meetingID: string, callback) => {
+    try {
+      await manager.manualRestart(meetingID);
+      callback?.({ success: true });
+    } catch (e: any) { callback?.({ error: e.message }); }
+  });
+
+  socket.on("bot:getSnapshot", async (callback) => {
+    try {
+      const snapshot = await manager.getSnapshot();
+      callback?.(snapshot);
+    } catch (e: any) { callback?.([]); }
+  });
+
+  socket.on("bot:setAutoManage", async (enabled: boolean, callback) => {
+    try {
+      await manager.setAutoManage(enabled);
+      callback?.({ success: true });
+    } catch (e: any) { callback?.({ error: e.message }); }
+  });
+
+  socket.on("bot:simulate-hello", async (id: string, callback) => {
+    try {
+      await manager.simulateHello(id);
+      callback?.({ success: true });
+    } catch (e: any) { callback?.({ error: e.message }); }
+  });
+
+  socket.on('bot-speak-data', (pcmData) => {
+    const floatData = new Float32Array(pcmData);
+    manager.sendBotAudioToMeetings(floatData);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`[Server] Client disconnected: ${socket.id}`);
+  });
+});
+
+server.listen(3001, () => {
+  console.log(`[Server] WebSocket Backend listening on http://localhost:3001`);
+});
+// --------------------------------------------------------------------------
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -17,11 +99,11 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      // Preload js is kept only for the content script audio IPC, frontend UI uses WebSockets directly
       preload: path.join(__dirname, "preload.js"),
     },
   });
 
-  // Open DevTools for debugging
   mainWindow.webContents.openDevTools();
 
   const isDev = process.env.NODE_ENV === 'development';
@@ -29,7 +111,6 @@ function createWindow() {
   if (isDev) {
     const appUrl = process.env.APP_URL || "http://localhost:3000";
     console.log("[Main] Loading URL (Dev):", appUrl);
-    console.log("[Main] Preload path:", path.join(__dirname, "preload.js"));
 
     const loadUrlWithRetry = async (url: string, retries = 10) => {
       for (let i = 0; i < retries; i++) {
@@ -47,18 +128,11 @@ function createWindow() {
           }
         }
       }
-      console.error(`[Main] Failed to load ${url} after ${retries} attempts`);
     };
-
     loadUrlWithRetry(appUrl);
   } else {
-    // Production: Load from file system
-    // Path: dist/electron/electron/main.js -> ../../../out/index.html
     const indexPath = path.join(__dirname, "../../../out/index.html");
-    console.log("[Main] Loading File (Prod):", indexPath);
-    mainWindow.loadFile(indexPath).catch(e => {
-      console.error("[Main] Failed to load file:", e);
-    });
+    mainWindow.loadFile(indexPath).catch(e => console.error("[Main] Failed to load file:", e));
   }
 
   mainWindow.on("closed", () => {
@@ -69,61 +143,10 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   manager.start();
-
-  // Push updates to renderer
-  // Push updates to renderer
-  manager.onUpdate((meetings) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      console.log(`[Main] Sending meeting update: ${meetings.length} meetings`);
-      mainWindow.webContents.send("meetings:update", meetings);
-    }
-  });
-
-  manager.onTranscript((data) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      console.log(`[Main] forwarding transcript: ${data.text.substring(0, 30)}...`);
-      mainWindow.webContents.send("bot:transcript", data);
-    } else {
-      console.warn("[Main] MainWindow not available to send transcript");
-    }
-  });
-
-  // Handle manual commands
-  ipcMain.handle("bot:join", (_e, meetingID: string) =>
-    manager.manualJoin(meetingID)
-  );
-  ipcMain.handle("bot:leave", (_e, meetingID: string) =>
-    manager.manualLeave(meetingID)
-  );
-  ipcMain.handle("bot:restart", (_e, meetingID: string) =>
-    manager.manualRestart(meetingID)
-  );
-  ipcMain.handle("bot:getSnapshot", () => {
-    console.log("[Main] Handling bot:getSnapshot request");
-    return manager.getSnapshot();
-  });
-  ipcMain.handle("bot:setAutoManage", (_e, enabled: boolean) =>
-    manager.setAutoManage(enabled)
-  );
-  ipcMain.handle("bot:simulate-hello", (_e, id: string) =>
-    manager.simulateHello(id)
-  );
-
-  // Handle audio data from content script
+  
+  // NOTE: MeetingManager still intercepts native IPC from the Chromium headless bot browsers
+  // when reading from the Meeting pages. 
   ipcMain.on("bot:audio", (event, audioData) => {
-    // Forward to manager to route to the correct transcription service
     manager.processAudioChunk(event.sender.id, audioData);
-  });
-
-  // Relay bot audio from main window to meeting windows
-  // This is used when UI wants to send TTS audio to a meeting
-  ipcMain.on('bot-speak-data', (event, pcmData: Float32Array) => {
-    // Verify sender is the main/control window
-    if (event.sender === mainWindow?.webContents) {
-      console.log(`[Main] Received bot-speak-data from main window (${pcmData.length} samples)`);
-
-      // Forward to all active meeting windows via manager
-      manager.sendBotAudioToMeetings(pcmData);
-    }
   });
 });

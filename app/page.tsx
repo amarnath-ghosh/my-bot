@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { io, Socket } from "socket.io-client";
 
 type BotState = "idle" | "joining" | "connected" | "error" | "ended";
 
@@ -21,57 +22,51 @@ interface TranscriptEntry {
   timestamp: string;
 }
 
-interface BotApi {
-  getSnapshot(): Promise<MeetingStatus[]>;
-  onMeetingsUpdate(callback: (meetings: MeetingStatus[]) => void): () => void;
-  onTranscript(callback: (data: TranscriptEntry) => void): () => void;
-  join(id: string): Promise<void>;
-  leave(id: string): Promise<void>;
-  restart(id: string): Promise<void>;
-  setAutoManage(enabled: boolean): Promise<void>;
-  simulateHello(id: string): Promise<void>;
-}
-
 export default function Home() {
   const [meetings, setMeetings] = useState<MeetingStatus[]>([]);
   const [autoManage, setAutoManage] = useState(true);
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-
+  
+  const socketRef = useRef<Socket | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const api = (window as any).botApi as BotApi;
-    if (api) {
-      api.getSnapshot().then(setMeetings);
+    // Connect to the standalone Node.js backend
+    const socket = io("http://localhost:3001");
+    socketRef.current = socket;
 
-      const cleanupMeetings = api.onMeetingsUpdate((data) => {
-        setMeetings(data);
-        // Auto-select first active meeting if none selected
-        if (!selectedMeetingId && data.length > 0) {
-          // Optional: setSelectedMeetingId(data[0].meetingID);
-        }
+    socket.on("connect", () => {
+      console.log("Connected to backend bot server");
+      socket.emit("bot:getSnapshot", (data: MeetingStatus[]) => {
+        if (Array.isArray(data)) setMeetings(data);
       });
+    });
 
-      const cleanupTranscript = api.onTranscript((data) => {
-        setTranscripts((prev) => [...prev, data]);
-      });
+    socket.on("meetings:update", (data: MeetingStatus[]) => {
+      setMeetings(data);
+      if (!selectedMeetingId && data.length > 0) {
+        // Optional: auto-select first
+      }
+    });
 
-      return () => {
-        cleanupMeetings();
-        cleanupTranscript();
-      };
-    }
+    socket.on("bot:transcript", (data: TranscriptEntry) => {
+      setTranscripts((prev) => [...prev, data]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [selectedMeetingId]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [transcripts]);
 
-  const toggleAuto = async () => {
+  const toggleAuto = () => {
     const next = !autoManage;
     setAutoManage(next);
-    await (window as any).botApi.setAutoManage(next);
+    socketRef.current?.emit("bot:setAutoManage", next);
   };
 
   const activeMeeting = meetings.find(m => m.meetingID === selectedMeetingId);
@@ -177,7 +172,7 @@ export default function Home() {
               <div style={{ display: 'flex', gap: '10px' }}>
                 {activeMeeting.botState === 'connected' && (
                   <button
-                    onClick={() => (window as any).botApi.simulateHello(activeMeeting.meetingID)}
+                    onClick={() => socketRef.current?.emit("bot:simulate-hello", activeMeeting.meetingID)}
                     style={{
                       padding: '8px 16px', background: '#7e57c2', color: 'white', border: 'none',
                       borderRadius: '6px', cursor: 'pointer', fontWeight: 600,
@@ -189,7 +184,7 @@ export default function Home() {
 
                 {activeMeeting.botState === 'idle' && (
                   <button
-                    onClick={() => (window as any).botApi.join(activeMeeting.meetingID)}
+                    onClick={() => socketRef.current?.emit("bot:join", activeMeeting.meetingID)}
                     style={{
                       padding: '8px 16px', background: '#2196f3', color: 'white', border: 'none',
                       borderRadius: '6px', cursor: 'pointer', fontWeight: 600
@@ -200,7 +195,7 @@ export default function Home() {
 
                 {(activeMeeting.botState === 'connected' || activeMeeting.botState === 'joining') && (
                   <button
-                    onClick={() => (window as any).botApi.leave(activeMeeting.meetingID)}
+                    onClick={() => socketRef.current?.emit("bot:leave", activeMeeting.meetingID)}
                     style={{
                       padding: '8px 16px', background: '#ef5350', color: 'white', border: 'none',
                       borderRadius: '6px', cursor: 'pointer', fontWeight: 600
@@ -220,9 +215,6 @@ export default function Home() {
                 </div>
               ) : (
                 filteredTranscripts.map((t, i) => {
-                  const isBot = t.speaker === 'Final' && (t.text.toLowerCase().includes('bot') || t.text.toLowerCase().includes('assistant'));
-                  // This is a rough heuristic since we don't have speaker IDs for simulation
-
                   return (
                     <div key={i} style={{ marginBottom: '15px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                       <div style={{
