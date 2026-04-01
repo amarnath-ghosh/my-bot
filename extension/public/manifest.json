@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Bot Remote Control",
+  "version": "1.0.0",
+  "description": "Control your meeting bots via WebSocket",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Bot Controller"
+  },
+  "host_permissions": [
+    "http://localhost:3001/*"
+  ]
+}
